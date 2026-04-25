@@ -1,0 +1,58 @@
+{
+  "summary": "PrimalForge v2 polish — frontend-only Playwright testing on mobile viewport (390x844). All 14 v2 features verified end-to-end across full onboarding + HUD + FUEL flows. Onboarding 4-step wizard (Goal → Vitals → Body-Comp → Activity) works; Athlete tier correctly LOCKED/disabled; Tape (US Navy) and Visual (5 cards per sex) BF estimators function; live preview card on step 4 shows correct LBM/BMR/TDEE/macros; goal math (fatloss/muscle/maintain) and macro scalers (2.4/2.2/2.0 g/kg protein, 0.7/1.2/1.0 carb scale) verified for two profiles; HUD water tracker (target=weight*35ml, +/-250 and +500 buttons) works and persists; header weight check-in modal saves weight, shows trend card, and recalculates calorie/macro targets immediately; FUEL recents chips appear after first log; per-food unit chips (g/tbsp/tsp/egg/rasher) appear correctly and meat foods are correctly limited to g only; live macro preview prints under amount input; British food roster verified (Beef Mince x3, Back Bacon, Cumberland Sausage, Black Pudding, Kippers, Mature Cheddar, Stilton, Wensleydale, Jacket Potato, Bramley Apple); AsyncStorage v2 keys (pf_profile_v2, pf_water_v2, pf_weights_v2) are written correctly. No critical bugs.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "TouchableOpacity (multiple)",
+        "issue": "Console warning 'props.pointerEvents is deprecated. Use style.pointerEvents' — originates from react-native-web internals, non-blocking, cosmetic. Same as iteration 1."
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "verified_flows": [
+    "Step 1 (Goal): goal-fatloss/muscle/maintain selectable, goal-athlete shows LOCKED tag and is disabled (click is a no-op)",
+    "Step 2 (Vitals): sex-m/sex-f toggle works; onboard-weight-input + onboard-height-input accept values",
+    "Step 3 (Body Comp): bfmode-manual / bfmode-tape / bfmode-visual all switch correctly",
+    "Tape Method (M h=178 n=38 w=84) yields BF = 15.7% (live ESTIMATED BF% card visible). NOTE: request asserted ~14.5–14.6%; the implemented Navy log10 formula matches public Navy/online calculators which give 15.7 for these inputs — code is correct, request's expected value was slightly off.",
+    "Visual cards (male): 5 cards visual-shred/athletic/lean/average/soft render; selecting visual-athletic sets BF=12 → LBM=70.4 kg confirmed",
+    "Visual cards (female): 5 cards visual-athletic/fit/average/soft/higher render (no shred/lean for female by spec); selecting visual-athletic sets BF=17 → LBM=66.4 confirmed",
+    "Step 4 preview card: live LBM/BMR/TDEE/Daily Kcal Target/P/F/C visible while choosing tier",
+    "FAT LOSS path math (W=80, h=178, BF=15, BASELINE): LBM=68, BMR=1839, TDEE=2528, Calories=2023, P=192g, C=70g, F=108g — exact",
+    "MUSCLE path math (W=80, BF=12 visual athletic, BASELINE): LBM=70.4, BMR=1891, TDEE=2600, Calories=2860, P=176g (×2.2), C=120g (×1.2), F=186g — exact",
+    "Goal × calorie multipliers (×0.8 fatloss, ×1.10 muscle, ×1.0 maintain) and macro scalers verified",
+    "Submit lands on HUD with header strip showing 'GOAL · TIER · NNNN kcal'",
+    "Water tracker: target = weight × 35 ml (80×35 = 2800 ml shown); +250, +500, -250 buttons all work and update count immediately",
+    "Header weight check-in (header-weight-btn) opens weight-modal; saving 79.5 then 79.0 kg displays weight-trend card 'LATEST WEIGH-IN 79 kg' and recalculates header kcal (2023 → 2002)",
+    "FUEL recents row: after first food log, recent-honey chip appears with food name; tapping it re-selects the food",
+    "Unit chips per food: Honey shows g/tbsp/tsp; Whole Egg shows unit-egg; Back Bacon shows unit-rasher; Beef Mince shows ONLY unit-g (no tbsp/tsp/egg/rasher) — meat exclusion correct",
+    "Honey 1 tbsp (21g) = 63.8 kcal · 0.1P / 0F / 17.2C — matches expected ~64 kcal / 17.2g C",
+    "fuel-preview line renders live below fuel-amount-input as user types (≈ kcal · P / F / C)",
+    "British food roster present and searchable: beef mince (3 variants), back bacon, cumberland sausage, black pudding, kippers, mature cheddar, stilton, wensleydale, jacket potato, bramley apple",
+    "AsyncStorage v2 keys after seed: pf_profile_v2, pf_weights_v2, pf_water_v2 are written; pf_log_v2 and pf_recents_v2 are written on food log (verified visually via recents chip persistence in earlier flow)",
+    "Existing testIDs preserved: hud-view, fuel-view, ledger-view, arsenal-view, tab-* navigation, macro-* cards, carb-status-card, burpee-penalty/burpee-count, siphon-alarm-btn/siphon-modal, bank-value/bank-deficit-btn/reset-bank-btn, tip-0..N (12 tip cards per spec)"
+  ],
+  "action_items": [
+    "INFO ONLY (no fix needed): The review request lists 'fat=140g' for the FAT LOSS sample profile and 'BF≈14.5%' for the Navy sample. These expected values are arithmetically inconsistent with the standard formulas the app implements (correct values are 108g and 15.7%). The code is correct; please update the spec/expectation document if it gets reused.",
+    "OPTIONAL POLISH (carry-over from iteration 1): index.tsx is now 1907 lines — strongly recommend splitting into screens/, data/foods.ts, data/tips.ts, lib/calc.ts. Not blocking.",
+    "OPTIONAL POLISH (carry-over): Wipe Day / Reset Bank still use Alert.alert which is a no-op on web preview but works on native iOS/Android. Consider Modal-based confirm for parity."
+  ],
+  "critical_code_review_comments": [
+    "navyBF() in index.tsx correctly uses log10 = ln/LN10 with the published US Navy coefficients for both sexes; safe-guards against waist<=neck are present in the consumer (returns NaN).",
+    "buildProfile() derives fat as a residual from calories−P*4−C*4 with Math.max(0,...) — sound and prevents negative fat for extreme low-carb/high-protein settings.",
+    "Water target derived as weight*35 (ml/kg) recomputes whenever profile.weight is updated by the weight check-in modal — dynamic, no stale value.",
+    "v2 storage namespace cleanly isolated from v1 (different keys), so legacy users start fresh as intended.",
+    "Athlete goal tile is rendered with disabled style + LOCKED tag and the onPress is gated; clicking it does nothing — matches spec.",
+    "index.tsx is now 1907 lines — exceeds 700-line guideline (worsened from iteration 1's 1565). Splitting into modules would improve maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only per request)", "frontend": "14/14 = 100% (zero functional defects)"},
+  "seed_data_creation": "None — AsyncStorage-only client app. Each test starts with localStorage.clear().",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All v2 testIDs from request are wired and discoverable. Mobile viewport 390x844. To run a full flow: localStorage.clear() → reload → click goal-fatloss → onboard-next-btn → sex-m + weight 80 + height 178 → next → bfmode-manual + onboard-bf-input 15 → next → onboard-tier-baseline → onboard-submit-btn. Each browser_automation_tool call is a fresh context (no localStorage carryover between calls), so do full flow per script. Math reference for FAT LOSS: LBM=68, BMR=1839, TDEE=2528, Cal=2023, P=192, C=70, F=108. Math reference for MUSCLE+visual-athletic: LBM=70.4, BMR=1891, TDEE=2600, Cal=2860, P=176, C=120, F=186. Honey 1 tbsp = 63.8 kcal / 17.2 C. Beef Mince must show only unit-g.",
+  "rca_of_issue": "No bugs to triage in this iteration. The two numeric mismatches in the review request (fat=140g, BF=14.5%) are spec-side rounding/arithmetic errors, not code bugs — flagged in action_items for awareness."
+}
