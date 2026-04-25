@@ -7,8 +7,11 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import {
   C,
   INGREDIENTS,
@@ -21,6 +24,13 @@ import {
 import { styles } from "../styles";
 import { haptic, confirmAction } from "../utils";
 import type { ScanHistEntry } from "../types";
+
+type OcrState =
+  | { kind: "idle" }
+  | { kind: "preview"; uri: string }
+  | { kind: "running"; uri: string; progress: number }
+  | { kind: "done"; uri: string }
+  | { kind: "error"; uri?: string; message: string };
 
 export function ScanView({
   history,
@@ -35,6 +45,7 @@ export function ScanView({
   const [productLabel, setProductLabel] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [ocr, setOcr] = useState<OcrState>({ kind: "idle" });
 
   const verdictColor = (lvl: RiskLevel) =>
     lvl === "green" ? C.optimal : lvl === "amber" ? C.warning : C.penalty;
@@ -64,6 +75,96 @@ export function ScanView({
     setResult(null);
     setProductLabel("");
     setShowSavePrompt(false);
+    setOcr({ kind: "idle" });
+  };
+
+  const runOcr = async (uri: string) => {
+    if (Platform.OS !== "web") {
+      // Tesseract.js needs browser APIs (Web Worker, OffscreenCanvas).
+      // On native, keep the preview and let the user transcribe.
+      setOcr({
+        kind: "error",
+        uri,
+        message: "OCR runs on web. Type ingredients from the photo below.",
+      });
+      return;
+    }
+    setOcr({ kind: "running", uri, progress: 0 });
+    try {
+      const mod: any = await import("tesseract.js");
+      const Tesseract = mod.default ?? mod;
+      const out = await Tesseract.recognize(uri, "eng", {
+        logger: (m: { status: string; progress: number }) => {
+          if (m.status === "recognizing text") {
+            setOcr((cur) =>
+              cur.kind === "running"
+                ? { ...cur, progress: m.progress }
+                : cur
+            );
+          }
+        },
+      });
+      const cleaned = (out.data?.text ?? "")
+        .replace(/[\r\n]+/g, ", ")
+        .replace(/\s{2,}/g, " ")
+        .replace(/,\s*,/g, ",")
+        .trim();
+      if (cleaned.length < 4) {
+        setOcr({ kind: "error", uri, message: "Couldn't read text. Try a clearer shot." });
+        return;
+      }
+      setInput((prev) => (prev.trim() ? `${prev.trim()}, ${cleaned}` : cleaned));
+      setOcr({ kind: "done", uri });
+      haptic("success");
+    } catch {
+      setOcr({
+        kind: "error",
+        uri,
+        message: "OCR failed. Type the ingredients below.",
+      });
+    }
+  };
+
+  const pickFromCamera = async () => {
+    haptic();
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        setOcr({ kind: "error", message: "Camera permission denied." });
+        return;
+      }
+      const r = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (r.canceled || !r.assets?.[0]) return;
+      const uri = r.assets[0].uri;
+      setOcr({ kind: "preview", uri });
+      runOcr(uri);
+    } catch {
+      setOcr({ kind: "error", message: "Camera unavailable." });
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    haptic();
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setOcr({ kind: "error", message: "Photo permission denied." });
+        return;
+      }
+      const r = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (r.canceled || !r.assets?.[0]) return;
+      const uri = r.assets[0].uri;
+      setOcr({ kind: "preview", uri });
+      runOcr(uri);
+    } catch {
+      setOcr({ kind: "error", message: "Couldn't open photos." });
+    }
   };
 
   const saveScan = () => {
@@ -96,7 +197,61 @@ export function ScanView({
           palmitate, fragrance, aluminium salts and {INGREDIENTS.length - 25}+ flagged compounds.
         </Text>
 
-        <Text style={styles.label}>INGREDIENT LIST</Text>
+        <Text style={styles.subKicker}>CAPTURE LABEL</Text>
+        <View style={styles.ocrBtnRow} testID="ocr-buttons">
+          <TouchableOpacity
+            testID="ocr-camera-btn"
+            onPress={pickFromCamera}
+            style={[styles.secondaryBtn, { flex: 1 }]}
+            disabled={ocr.kind === "running"}
+          >
+            <Ionicons name="camera-outline" size={14} color={C.text} />
+            <Text style={styles.secondaryBtnText}>CAMERA</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="ocr-library-btn"
+            onPress={pickFromLibrary}
+            style={[styles.secondaryBtn, { flex: 1 }]}
+            disabled={ocr.kind === "running"}
+          >
+            <Ionicons name="image-outline" size={14} color={C.text} />
+            <Text style={styles.secondaryBtnText}>PHOTOS</Text>
+          </TouchableOpacity>
+        </View>
+
+        {ocr.kind !== "idle" && (
+          <View style={styles.ocrPanel} testID="ocr-panel">
+            {"uri" in ocr && ocr.uri && (
+              <Image source={{ uri: ocr.uri }} style={styles.ocrPreview} />
+            )}
+            {ocr.kind === "running" && (
+              <View style={styles.ocrStatusRow}>
+                <ActivityIndicator size="small" color={C.science} />
+                <Text style={styles.ocrStatusText}>
+                  Reading text… {Math.round(ocr.progress * 100)}%
+                </Text>
+              </View>
+            )}
+            {ocr.kind === "done" && (
+              <View style={styles.ocrStatusRow}>
+                <Ionicons name="checkmark-circle" size={14} color={C.optimal} />
+                <Text style={[styles.ocrStatusText, { color: C.optimal }]}>
+                  Text added below — review then SCAN.
+                </Text>
+              </View>
+            )}
+            {ocr.kind === "error" && (
+              <View style={styles.ocrStatusRow}>
+                <Ionicons name="warning-outline" size={14} color={C.warning} />
+                <Text style={[styles.ocrStatusText, { color: C.warning }]}>
+                  {ocr.message}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        <Text style={[styles.label, { marginTop: 14 }]}>INGREDIENT LIST</Text>
         <TextInput
           testID="scan-input"
           value={input}
