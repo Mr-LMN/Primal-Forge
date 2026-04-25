@@ -196,6 +196,17 @@ const round = (n: number, d = 0) => {
   return Math.round(n * m) / m;
 };
 
+const confirmAction = (title: string, msg: string, onConfirm: () => void) => {
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined" && window.confirm(`${title}\n\n${msg}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, msg, [
+    { text: "Cancel", style: "cancel" },
+    { text: "CONFIRM", style: "destructive", onPress: onConfirm },
+  ]);
+};
+
 const todayKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -385,10 +396,7 @@ function Header({ profile, onReset }: { profile: Profile; onReset: () => void })
       <TouchableOpacity
         testID="header-reset-btn"
         onPress={() =>
-          Alert.alert("WIPE PROTOCOL", "Reset profile, logs, and bank?", [
-            { text: "Cancel", style: "cancel" },
-            { text: "WIPE", style: "destructive", onPress: onReset },
-          ])
+          confirmAction("WIPE PROTOCOL", "Reset profile, logs, and bank?", onReset)
         }
         style={styles.iconBtn}
       >
@@ -768,12 +776,7 @@ function FuelView({
           {log.length > 0 && (
             <TouchableOpacity
               testID="wipe-day-btn"
-              onPress={() =>
-                Alert.alert("WIPE DAY", "Erase today's log?", [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "WIPE", style: "destructive", onPress: onWipe },
-                ])
-              }
+              onPress={() => confirmAction("WIPE DAY", "Erase today's log?", onWipe)}
             >
               <Text style={styles.wipeText}>WIPE DAY</Text>
             </TouchableOpacity>
@@ -923,10 +926,7 @@ function LedgerView({
           <TouchableOpacity
             testID="reset-bank-btn"
             onPress={() =>
-              Alert.alert("RESET BANK", "Clear all banked surplus and history?", [
-                { text: "Cancel", style: "cancel" },
-                { text: "RESET", style: "destructive", onPress: onReset },
-              ])
+              confirmAction("RESET BANK", "Clear all banked surplus and history?", onReset)
             }
           >
             <Text style={styles.wipeText}>RESET BANK</Text>
