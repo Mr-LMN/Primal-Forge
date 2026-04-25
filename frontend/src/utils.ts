@@ -88,6 +88,107 @@ export const fitScore = (
   return Math.max(0, Math.min(100, Math.round(100 - dist * 30)));
 };
 
+type RecipeMacros = { id: string; kcal: number; p: number; f: number; c: number };
+
+// Plain-English explainer of how a (possibly scaled) recipe fits remaining macros.
+// Prioritises the largest signal so the line stays short.
+export const fitReason = (
+  r: { kcal: number; p: number; f: number; c: number },
+  rem: MacroRem
+): string => {
+  if (rem.kcal <= 0) return "Goal hit — leftover-friendly pick.";
+  const kcalDelta = r.kcal - rem.kcal;
+  const pDelta = r.p - rem.p;
+  const cDelta = r.c - rem.c;
+  const fDelta = r.f - rem.f;
+  const parts: string[] = [];
+  if (Math.abs(kcalDelta) <= rem.kcal * 0.1)
+    parts.push(`matches your remaining ${Math.round(rem.kcal)} kcal`);
+  else if (kcalDelta > 0) parts.push(`over by ${Math.round(kcalDelta)} kcal`);
+  else parts.push(`under by ${Math.round(-kcalDelta)} kcal`);
+  // Pick the most distorted macro to surface
+  const mags: [string, number][] = [
+    ["protein", pDelta],
+    ["carbs", cDelta],
+    ["fat", fDelta],
+  ];
+  mags.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  const [name, delta] = mags[0];
+  if (Math.abs(delta) >= 3) {
+    const sign = delta > 0 ? "+" : "−";
+    parts.push(`${sign}${Math.round(Math.abs(delta))}g ${name}`);
+  }
+  return parts.join(" · ");
+};
+
+// Greedy day-builder: pick best-fitting recipe per slot, then fill remaining
+// kcal with snacks. Does not exceed the day's kcal budget by more than 10%.
+export type PlannedSlot = "BREAKFAST" | "LUNCH" | "DINNER";
+export type PlannedMeal<R extends RecipeMacros & { meal: string; name: string }> = {
+  slot: PlannedSlot | "SNACK";
+  recipe: R;
+};
+
+export const buildDayPlan = <R extends RecipeMacros & { meal: string; name: string }>(
+  recipes: R[],
+  rem: MacroRem
+): PlannedMeal<R>[] => {
+  if (rem.kcal <= 100 || recipes.length === 0) return [];
+  const used = new Set<string>();
+  const plan: PlannedMeal<R>[] = [];
+  let budget: MacroRem = { ...rem };
+
+  const ceiling = rem.kcal * 1.1; // allow up to 10% over total
+  let spent = 0;
+
+  const pickForSlot = (slot: PlannedSlot, mealTag: string) => {
+    const candidates = recipes.filter(
+      (r) =>
+        !used.has(r.id) &&
+        r.meal === mealTag &&
+        spent + r.kcal <= ceiling
+    );
+    if (candidates.length === 0) return;
+    const best = [...candidates]
+      .map((r) => ({ r, score: fitScore(r, budget) }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (!best || best.score <= 0) return;
+    plan.push({ slot, recipe: best.r });
+    used.add(best.r.id);
+    spent += best.r.kcal;
+    budget = {
+      kcal: Math.max(0, budget.kcal - best.r.kcal),
+      p: Math.max(0, budget.p - best.r.p),
+      f: Math.max(0, budget.f - best.r.f),
+      c: Math.max(0, budget.c - best.r.c),
+    };
+  };
+
+  pickForSlot("BREAKFAST", "BREAKFAST");
+  pickForSlot("LUNCH", "LUNCH");
+  pickForSlot("DINNER", "DINNER");
+
+  // Fill remaining kcal with snacks (smallest-first to avoid overshoot)
+  const snackPool = [...recipes]
+    .filter((r) => !used.has(r.id) && (r.meal === "SNACK" || r.meal === "POST-WO"))
+    .sort((a, b) => a.kcal - b.kcal);
+  for (const s of snackPool) {
+    if (spent + s.kcal > ceiling) continue;
+    if (budget.kcal < 80) break;
+    plan.push({ slot: "SNACK", recipe: s });
+    used.add(s.id);
+    spent += s.kcal;
+    budget = {
+      kcal: Math.max(0, budget.kcal - s.kcal),
+      p: Math.max(0, budget.p - s.p),
+      f: Math.max(0, budget.f - s.f),
+      c: Math.max(0, budget.c - s.c),
+    };
+  }
+
+  return plan;
+};
+
 export const initialXP = (): XPState => ({
   total: 0,
   spent: 0,

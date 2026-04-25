@@ -16,6 +16,7 @@ import {
   round,
   type Equipment,
   type Workout,
+  type Recipe,
   type RiskLevel,
 } from "../src/data";
 import { styles } from "../src/styles";
@@ -56,6 +57,7 @@ export default function Index() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [scanHistory, setScanHistory] = useState<ScanHistEntry[]>([]);
   const [recipeFavourites, setRecipeFavourites] = useState<string[]>([]);
+  const [customRecipes, setCustomRecipes] = useState<Recipe[]>([]);
   const [xp, setXp] = useState<XPState>(initialXP());
   const [tab, setTab] = useState<Tab>("hud");
   const [weightModal, setWeightModal] = useState(false);
@@ -78,6 +80,7 @@ export default function Index() {
       if (map[STORAGE.equipment]) setEquipment(JSON.parse(map[STORAGE.equipment]!));
       if (map[STORAGE.scanHistory]) setScanHistory(JSON.parse(map[STORAGE.scanHistory]!));
       if (map[STORAGE.recipeFavourites]) setRecipeFavourites(JSON.parse(map[STORAGE.recipeFavourites]!));
+      if (map[STORAGE.customRecipes]) setCustomRecipes(JSON.parse(map[STORAGE.customRecipes]!));
       if (map[STORAGE.xp]) {
         const parsed: XPState = JSON.parse(map[STORAGE.xp]!);
         const today = todayKey();
@@ -199,6 +202,18 @@ export default function Index() {
     setRecipeFavourites(next);
     await persist(STORAGE.recipeFavourites, JSON.stringify(next));
   };
+  const saveCustomRecipe = async (r: Recipe) => {
+    haptic("success");
+    const next = [r, ...customRecipes.filter((x) => x.id !== r.id)];
+    setCustomRecipes(next);
+    await persist(STORAGE.customRecipes, JSON.stringify(next));
+  };
+  const deleteCustomRecipe = async (id: string) => {
+    haptic();
+    const next = customRecipes.filter((r) => r.id !== id);
+    setCustomRecipes(next);
+    await persist(STORAGE.customRecipes, JSON.stringify(next));
+  };
 
   const resetAll = async () => {
     await AsyncStorage.multiRemove(Object.values(STORAGE));
@@ -213,6 +228,7 @@ export default function Index() {
     setEquipment([]);
     setScanHistory([]);
     setRecipeFavourites([]);
+    setCustomRecipes([]);
     setXp(initialXP());
   };
 
@@ -342,6 +358,9 @@ export default function Index() {
               }}
               favourites={recipeFavourites}
               onToggleFavourite={toggleRecipeFavourite}
+              customRecipes={customRecipes}
+              onSaveCustomRecipe={saveCustomRecipe}
+              onDeleteCustomRecipe={deleteCustomRecipe}
             />
           )}
           {tab === "forge" && (

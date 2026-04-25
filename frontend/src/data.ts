@@ -35,6 +35,7 @@ export const STORAGE = {
   equipment: "pf_equipment_v4",
   scanHistory: "pf_scan_history_v4",
   recipeFavourites: "pf_recipe_favourites_v1",
+  customRecipes: "pf_user_recipes_v1",
 };
 
 /* ---------- Profile types ---------- */
