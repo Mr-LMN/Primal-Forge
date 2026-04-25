@@ -977,4 +977,81 @@ export const styles = StyleSheet.create({
     paddingVertical: 30,
     alignItems: "center",
   },
+
+  /* ---------- RECIPE SORT / FAVES / FIT ---------- */
+  recipeSortRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 12,
+  },
+  recipeSortBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+  },
+  recipeSortBtnActive: {
+    backgroundColor: C.text,
+    borderColor: C.text,
+  },
+  recipeSortText: {
+    color: C.textDim,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontWeight: "900",
+  },
+  recipeFavBtn: {
+    marginLeft: "auto",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  fitBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  fitBadgeText: {
+    fontSize: 9,
+    letterSpacing: 1,
+    fontWeight: "900",
+  },
+  fitHeaderBox: {
+    backgroundColor: "rgba(14,165,233,0.06)",
+    borderWidth: 1,
+    borderColor: C.science,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  fitRemainRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 12,
+    marginBottom: 6,
+  },
+  fitRemainKcal: {
+    color: C.text,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  fitRemainMacro: {
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  fitRemainHint: {
+    color: C.textDim,
+    fontSize: 11,
+    lineHeight: 15,
+  },
 });

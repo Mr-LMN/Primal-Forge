@@ -34,6 +34,7 @@ export const STORAGE = {
   intelRead: "pf_intel_read_v3",
   equipment: "pf_equipment_v4",
   scanHistory: "pf_scan_history_v4",
+  recipeFavourites: "pf_recipe_favourites_v1",
 };
 
 /* ---------- Profile types ---------- */

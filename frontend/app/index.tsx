@@ -55,6 +55,7 @@ export default function Index() {
   const [workoutsLogged, setWorkoutsLogged] = useState<WorkoutLogged[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [scanHistory, setScanHistory] = useState<ScanHistEntry[]>([]);
+  const [recipeFavourites, setRecipeFavourites] = useState<string[]>([]);
   const [xp, setXp] = useState<XPState>(initialXP());
   const [tab, setTab] = useState<Tab>("hud");
   const [weightModal, setWeightModal] = useState(false);
@@ -76,6 +77,7 @@ export default function Index() {
       if (map[STORAGE.workouts]) setWorkoutsLogged(JSON.parse(map[STORAGE.workouts]!));
       if (map[STORAGE.equipment]) setEquipment(JSON.parse(map[STORAGE.equipment]!));
       if (map[STORAGE.scanHistory]) setScanHistory(JSON.parse(map[STORAGE.scanHistory]!));
+      if (map[STORAGE.recipeFavourites]) setRecipeFavourites(JSON.parse(map[STORAGE.recipeFavourites]!));
       if (map[STORAGE.xp]) {
         const parsed: XPState = JSON.parse(map[STORAGE.xp]!);
         const today = todayKey();
@@ -189,6 +191,14 @@ export default function Index() {
     setScanHistory(next);
     await persist(STORAGE.scanHistory, JSON.stringify(next));
   };
+  const toggleRecipeFavourite = async (recipeId: string) => {
+    haptic("light");
+    const next = recipeFavourites.includes(recipeId)
+      ? recipeFavourites.filter((id) => id !== recipeId)
+      : [...recipeFavourites, recipeId];
+    setRecipeFavourites(next);
+    await persist(STORAGE.recipeFavourites, JSON.stringify(next));
+  };
 
   const resetAll = async () => {
     await AsyncStorage.multiRemove(Object.values(STORAGE));
@@ -202,6 +212,7 @@ export default function Index() {
     setWorkoutsLogged([]);
     setEquipment([]);
     setScanHistory([]);
+    setRecipeFavourites([]);
     setXp(initialXP());
   };
 
@@ -323,6 +334,14 @@ export default function Index() {
               recents={recents}
               onLog={handleLog}
               onWipe={async () => saveLog(log.filter((e) => e.dateKey !== todayKey()))}
+              remaining={{
+                kcal: Math.max(0, profile.calories - totals.kcal),
+                p: Math.max(0, profile.protein - totals.p),
+                f: Math.max(0, profile.fat - totals.f),
+                c: Math.max(0, profile.carbs - totals.c),
+              }}
+              favourites={recipeFavourites}
+              onToggleFavourite={toggleRecipeFavourite}
             />
           )}
           {tab === "forge" && (
