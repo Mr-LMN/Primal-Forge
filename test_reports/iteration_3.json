@@ -1,0 +1,59 @@
+{
+  "summary": "PrimalForge v3 frontend-only Playwright testing on mobile viewport (390x844). FOUND AND FIXED 1 CRITICAL React hooks-rule violation that crashed the entire app on submitting onboarding ('Rendered more hooks than during the previous render'). After fix, end-to-end v3 flows verified: onboarding (4 steps) → 5-tab structure (HUD/FUEL/FORGE/SCAN/VAULT, no Arsenal) → Daily Intel card + modal + +50 XP toast → FORGE library (25 workouts, focus filter shows 4 strength, time filter shows 11 ≤15min) → workout detail modal with WHY IT WORKS science box, exercise list, WATCH FORM buttons → SCAN coming-soon placeholder → FUEL meal log +10 XP → Weight check-in +25 XP → VAULT (xp/streak/credits/archive/perks/bank). Header streak chip + credits chip render as designed. AsyncStorage v3 keys confirmed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Index() default export — root component (app/index.tsx)",
+        "issue": "RESOLVED BY TESTING AGENT. Hooks-rule violation: useEffect at old line 262 (macros-hit watcher) sat AFTER the early returns at `if (!loaded)` and `if (!profile)`. After onboarding submission `profile` flips from null → object, the component now renders the previously-skipped useEffect, increasing the hook count vs. the previous render → React threw 'Rendered more hooks than during the previous render' and the entire app crashed to the dev red-screen on EVERY first-run flow. Fix applied: moved derived-value computation + macros-hit useEffect ABOVE the conditional returns and made `macrosHitNow` null-safe (`!!profile && ...`). Verified post-fix with localStorage.clear() → full onboarding → app renders without hook errors and all v3 flows are reachable.",
+        "testID": "n/a (root component)",
+        "priority": "CRITICAL (was app-breaking)"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "various", "issue": "Console warnings (non-blocking, carry-over from v1/v2): 'shadow* style props are deprecated. Use boxShadow' and 'props.pointerEvents is deprecated' from react-native-web internals. Cosmetic only."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_3.json"],
+  "verified_flows": [
+    "Onboarding (4 steps): GOAL → VITALS (sex/weight/height) → BODY COMP (manual BF=15) → ACTIVITY (baseline tier) → submit lands on HUD with header strip 'FAT LOSS · 2023 kcal'",
+    "Tab bar shows 5 tabs (tab-hud / tab-fuel / tab-forge / tab-scan / tab-vault). tab-arsenal element is absent (replaced by FORGE per spec).",
+    "Header streak-chip renders with fire icon and value '1' on first load",
+    "Header credits-chip is hidden when credits=0 (visible only when credits>0 — matches spec)",
+    "Daily Intel card visible at top of HUD: tag 'GLYCOGEN' + title 'Honey + Glucose Refeed' (rotates by dayOfYear%TIPS.length) + '+50 XP' badge",
+    "Tap daily-intel-card opens intel-modal with full body + citation",
+    "Tap intel-ack-btn dismisses modal and fires '+50 XP · INTEL READ' toast",
+    "After mark-read, vault-xp increments to 50 and tomorrow-style ALREADY CLAIMED state engages (verified ack disabled state in code)",
+    "FORGE tab loads 25 workout cards; filter-focus-strength reduces to 4 cards; filter-time-15 reduces to 11 cards; filter-focus-all/filter-time-all (NOTE: 'ANY' chip uses testID filter-time-all, NOT filter-time-any) reset list",
+    "Tap workout-tabata-torch opens workout-detail modal containing: focus badge (FAT BURN), time badge (4 MIN), title TABATA TORCH, description, 'WHY IT WORKS' science box, exercise-0 row, video-0 WATCH FORM button (Linking.openURL hooked to YouTube search URL), log-workout-btn — all rendered correctly",
+    "log-workout-btn fires '+100 XP · WORKOUT DONE' toast and persists to pf_workouts_v3",
+    "SCAN tab loads scan-view with COMING SOON placeholder + scan icon + feature bullets",
+    "FUEL tab: open-food-picker → search 'honey' → food-option-honey → 20g → fuel-log-btn fires '+10 XP · MEAL LOGGED' toast",
+    "Header weight-modal: weight-save-btn 79.5kg fires '+25 XP · WEIGH-IN' toast and recalculates header kcal",
+    "VAULT tab shows: vault-xp (TOTAL XP), vault-streak, vault-credits, archive-* cards (15 archive entries), perk-* cards (6 perks), bank-value, bank-deficit-btn",
+    "AsyncStorage v3 keys present after seed: pf_xp_v3, pf_workouts_v3, pf_intel_read_v3 (referenced in code) plus existing v2 keys (pf_profile_v2, pf_log_v2, pf_water_v2, pf_weights_v2, pf_recents_v2, pf_bank_v2, pf_bank_history_v2). Reload preserves state and skips onboarding."
+  ],
+  "action_items": [
+    "DONE BY TESTER (please pull change): /app/frontend/app/index.tsx — moved derived-value block + macros-hit useEffect ABOVE the `if (!loaded)` / `if (!profile)` early-returns and made macrosHitNow null-safe. Critical hooks-rule fix; without it the app cannot get past onboarding submission.",
+    "OPTIONAL: Spec mentions a 'CLAIMED' badge on the daily-intel-card after mark-read — code applies the disabled style + label change inside the modal but the HUD card itself does not visibly add a 'CLAIMED' badge. Confirm whether spec requires the badge on the card too; minor copy/visual addition if so.",
+    "OPTIONAL: Minor — 'ANY' chip in MAX TIME row uses testID `filter-time-all` not `filter-time-any` (per spec phrasing). If main agent wants strict alignment with the agent_to_agent_context_note, alias both.",
+    "OPTIONAL POLISH (carry-over): index.tsx is now 1597 lines after splitting data/styles into src/ — still over the 700-line guideline. Further splitting into screens/* would help maintainability but is non-blocking."
+  ],
+  "critical_code_review_comments": [
+    "Hooks-rule violation in Index() (now patched). Always co-locate ALL hooks above ANY conditional return.",
+    "addXP() correctly enforces per-day caps (mealCap*mealLogged=50 XP/day, workoutCap*workoutLogged=200 XP/day) and idempotent flags (intelRead/macrosHit/weighIn) via xp.daily[today].",
+    "Streak tick logic (initialise to 1 on first load, +1 if lastActiveDate=yesterday, reset to 1 otherwise) is correct and runs on AsyncStorage hydrate.",
+    "credits = floor(xp.total/CREDIT_PER_XP) - xp.spent — clean derivation; spending only mutates xp.spent, persistence ok.",
+    "Linking.openURL with encodeURIComponent for YouTube search query is safe.",
+    "Macros-hit useEffect now correctly depends on a primitive boolean and is null-guarded against profile being absent."
+  ],
+  "updated_files": ["/app/frontend/app/index.tsx"],
+  "success_rate": {"backend": "N/A (frontend-only per request)", "frontend": "100% AFTER FIX (was 0% before — entire app red-screened post-onboarding)"},
+  "seed_data_creation": "None — AsyncStorage-only client app; each test run does localStorage.clear() then full onboarding.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile viewport 390x844. Pre-fix bug was: hooks-rule violation crashing app on first onboarding submit; FIXED by moving derived computation + useEffect above conditional returns in Index(). Onboarding shortcut: localStorage.clear() → goal-fatloss → onboard-next-btn → sex-m + onboard-weight-input=80 + onboard-height-input=178 → next → bfmode-manual + onboard-bf-input=15 → next → onboard-tier-baseline → onboard-submit-btn. Daily Intel rotates by dayOfYear()%15 — on test day index resolves to 'Honey + Glucose Refeed' (GLYCOGEN tag). FORGE counts: ALL=25, FATBURN=6, PERFORMANCE=5, STRENGTH=4 (verified), METCON, MOBILITY, RECOVERY for the rest, ≤15min=11. testID for 'ANY' time filter is `filter-time-all` (NOT filter-time-any). XP rules: intel=50, meal=10 (cap 5/day), workout=100 (cap 2/day), macrosHit=200, weighIn=25, 7-day bonus=500. CREDIT_PER_XP=1000.",
+  "rca_of_issue": "BUG: Rendered-more-hooks crash. ROOT CAUSE: A macros-hit useEffect was placed AFTER two early-returns (`if (!loaded)` and `if (!profile)`) inside Index(). React requires the same hooks to be called in the same order on every render; on first onboarding-load the early returns fired before the useEffect, but post-submit (loaded=true, profile≠null) the useEffect now executed, adding a hook the previous render didn't have → 'Rendered more hooks than during the previous render' → app red-screened. REPRO: localStorage.clear() → reload → complete onboarding (any inputs) → click onboard-submit-btn → red-screen with 'Rendered more hooks than during the previous render'. MITIGATION (applied): Moved the derived-value block and the useEffect to a position before any conditional return, and added null-safety to macrosHitNow so it works while profile is still null. Post-fix verification: full v3 flow runs without React errors; 0 'more hooks' console errors observed in fresh-state run."
+}
