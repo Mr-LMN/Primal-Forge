@@ -33,6 +33,7 @@ export const STORAGE = {
   workouts: "pf_workouts_v3",
   intelRead: "pf_intel_read_v3",
   equipment: "pf_equipment_v4",
+  scanHistory: "pf_scan_history_v4",
 };
 
 /* ---------- Profile types ---------- */
@@ -162,6 +163,434 @@ export const FOODS: Food[] = [
   { id: "sweetpot", name: "Sweet Potato (baked)", cat: "Refeed Carb", kcal: 90, p: 2, f: 0.1, c: 21 },
   { id: "rice-white", name: "White Rice (boiled)", cat: "Refeed Carb", kcal: 130, p: 2.7, f: 0.3, c: 28 },
   { id: "maple", name: "Maple Syrup", cat: "Refeed Carb", kcal: 260, p: 0, f: 0.2, c: 67, units: [{ id: "tbsp", label: "tbsp", g: 20 }, { id: "tsp", label: "tsp", g: 7 }] },
+];
+
+/* ---------- Recipes (curated, macro-fit) ---------- */
+export type RecipeMeal = "BREAKFAST" | "LUNCH" | "DINNER" | "POST-WO" | "SNACK";
+export type RecipeTag = "carnivore" | "animal-based" | "hyrox" | "low-carb" | "high-protein" | "refeed" | "recovery" | "british";
+export type RecipeIngredient = { item: string; qty: string };
+
+export type Recipe = {
+  id: string;
+  name: string;
+  meal: RecipeMeal;
+  prepMin: number;
+  description: string;
+  tags: RecipeTag[];
+  kcal: number;
+  p: number;
+  f: number;
+  c: number;
+  ingredients: RecipeIngredient[];
+  steps: string[];
+  why?: string;
+};
+
+export const RECIPES: Recipe[] = [
+  /* BREAKFAST · 5 */
+  {
+    id: "rec-carn-stack", name: "Carnivore Stack", meal: "BREAKFAST", prepMin: 10,
+    description: "Ribeye, 3 eggs, butter. Zero-carb wake-up.",
+    tags: ["carnivore", "low-carb", "high-protein"],
+    kcal: 874, p: 69, f: 65, c: 1,
+    ingredients: [
+      { item: "Ribeye steak", qty: "200g" },
+      { item: "Whole eggs", qty: "3 medium" },
+      { item: "English butter", qty: "14g (1 tbsp)" },
+      { item: "Sea salt + black pepper", qty: "to taste" },
+    ],
+    steps: [
+      "Cast-iron pan, ripping hot. Salt the steak.",
+      "Sear ribeye 2 min per side for medium-rare. Rest on warm plate.",
+      "Drop heat, melt butter. Crack eggs into the rendered fat.",
+      "Spoon hot butter over yolks until set whites, runny yolks.",
+      "Plate it. No seed oils. No sides. Eat.",
+    ],
+    why: "Saturated fat + cholesterol → hormones. Steak amino profile peaks leucine for MPS.",
+  },
+  {
+    id: "rec-liver-smash", name: "Liver & Bacon Smash", meal: "BREAKFAST", prepMin: 12,
+    description: "Nutrient-dense organ kick. Choline + retinol bomb.",
+    tags: ["animal-based", "low-carb", "british"],
+    kcal: 382, p: 39, f: 22, c: 4,
+    ingredients: [
+      { item: "Beef liver", qty: "100g, sliced thin" },
+      { item: "Back bacon", qty: "2 rashers (50g)" },
+      { item: "English butter", qty: "14g" },
+      { item: "Onion (optional)", qty: "30g, sliced" },
+    ],
+    steps: [
+      "Soak liver in milk 10 min before cook. Pat dry.",
+      "Render bacon in pan. Set aside.",
+      "Add butter to bacon fat. Sear liver 90s per side. Don't overcook.",
+      "Stack on plate, bacon on top. Done.",
+    ],
+    why: "Liver = highest natural source of B12, retinol, copper. Eat once weekly minimum.",
+  },
+  {
+    id: "rec-mack-eggs", name: "Smoked Mackerel & Eggs", meal: "BREAKFAST", prepMin: 6,
+    description: "Omega-3 + cholesterol stack. Brain fuel.",
+    tags: ["animal-based", "low-carb", "high-protein"],
+    kcal: 438, p: 28, f: 36, c: 1,
+    ingredients: [
+      { item: "Smoked mackerel fillet", qty: "80g" },
+      { item: "Whole eggs", qty: "2 medium" },
+      { item: "Butter", qty: "10g" },
+    ],
+    steps: [
+      "Flake mackerel onto warm plate.",
+      "Melt butter. Scramble eggs low and slow.",
+      "Eggs go on top of mackerel. Crack pepper.",
+    ],
+    why: "Pre-formed DHA/EPA bypasses ALA conversion bottleneck. Highest brain bioavailability.",
+  },
+  {
+    id: "rec-lean-plate", name: "Lean Protein Plate", meal: "BREAKFAST", prepMin: 12,
+    description: "Cut day breakfast. High protein, low fat.",
+    tags: ["high-protein", "low-carb"],
+    kcal: 428, p: 73, f: 8, c: 12,
+    ingredients: [
+      { item: "Chicken breast (cooked)", qty: "200g" },
+      { item: "Egg whites", qty: "100g (~3 whites)" },
+      { item: "Blueberries", qty: "80g" },
+    ],
+    steps: [
+      "Slice cold cooked chicken breast.",
+      "Pan-scramble egg whites 60s. Don't overdo it.",
+      "Plate chicken, whites, berries. Black coffee on the side.",
+    ],
+    why: "P:F ratio >7 maximises lean protein turnover during deficit. Berries cap oxidative load.",
+  },
+  {
+    id: "rec-marrow-toast", name: "Bone Marrow on Jacket", meal: "BREAKFAST", prepMin: 35,
+    description: "Refeed-day decadence. Glycine + collagen + glycogen.",
+    tags: ["animal-based", "refeed", "british"],
+    kcal: 468, p: 8, f: 25, c: 53,
+    ingredients: [
+      { item: "Bone marrow (roasted)", qty: "30g (1 small bone)" },
+      { item: "Jacket potato", qty: "1 medium (250g)" },
+      { item: "Sea salt", qty: "flake, generous" },
+    ],
+    steps: [
+      "Bake jacket 200°C / 50 min until skin crisps.",
+      "Roast marrow bone 15 min at 220°C.",
+      "Split jacket open. Scoop marrow on top. Salt heavy.",
+    ],
+    why: "Glycine balances methionine load from muscle meat. Joints + skin + sleep.",
+  },
+
+  /* LUNCH · 6 */
+  {
+    id: "rec-steak-salad", name: "Steak & Avocado Bowl", meal: "LUNCH", prepMin: 10,
+    description: "Cold sirloin, ripe avo, butter drizzle. Zero faff.",
+    tags: ["animal-based", "low-carb", "high-protein"],
+    kcal: 828, p: 59, f: 61, c: 13,
+    ingredients: [
+      { item: "Sirloin steak (pre-cooked, sliced)", qty: "200g" },
+      { item: "Avocado", qty: "1 whole (150g)" },
+      { item: "Butter (warm, drizzle)", qty: "14g" },
+      { item: "Sea salt + lemon", qty: "to taste" },
+    ],
+    steps: [
+      "Slice cold sirloin against the grain.",
+      "Halve avocado. Lay flesh-down.",
+      "Melt butter, drizzle over steak. Squeeze lemon. Eat.",
+    ],
+  },
+  {
+    id: "rec-lamb-bowl", name: "Lamb Chop Bowl", meal: "LUNCH", prepMin: 12,
+    description: "Grass-fed lamb + dark berries. Hyrox training fuel.",
+    tags: ["animal-based", "high-protein", "hyrox"],
+    kcal: 631, p: 51, f: 42, c: 10,
+    ingredients: [
+      { item: "Lamb chops", qty: "200g (~2 chops)" },
+      { item: "Blackberries", qty: "100g" },
+      { item: "Sea salt + rosemary", qty: "to taste" },
+    ],
+    steps: [
+      "Salt chops 20 min ahead. Sear hot pan 3-4 min per side.",
+      "Rest 5 min. Plate with berries on the side.",
+      "Sprinkle dried rosemary. Eat.",
+    ],
+  },
+  {
+    id: "rec-salmon-sweet", name: "Salmon & Sweet Potato", meal: "LUNCH", prepMin: 25,
+    description: "Refeed day omega-3 + glycogen replenishment.",
+    tags: ["animal-based", "refeed", "recovery"],
+    kcal: 696, p: 44, f: 37, c: 42,
+    ingredients: [
+      { item: "Scottish salmon fillet", qty: "200g" },
+      { item: "Sweet potato", qty: "200g, baked" },
+      { item: "Butter", qty: "14g" },
+    ],
+    steps: [
+      "Bake sweet potato 200°C / 40 min.",
+      "Pan-sear salmon skin-side first 4 min, flip 2 min.",
+      "Split sweet potato, drop butter inside. Salmon on the side.",
+    ],
+  },
+  {
+    id: "rec-tuna-plate", name: "Tuna Power Plate", meal: "LUNCH", prepMin: 5,
+    description: "Tinned tuna, egg, avo. Cubicle-friendly.",
+    tags: ["high-protein", "low-carb"],
+    kcal: 434, p: 35, f: 28, c: 13,
+    ingredients: [
+      { item: "Tuna in spring water", qty: "1 tin (100g drained)" },
+      { item: "Hard-boiled egg", qty: "1 medium" },
+      { item: "Avocado", qty: "1 whole (150g)" },
+    ],
+    steps: [
+      "Drain tuna. Halve egg. Slice avo.",
+      "Plate everything. Salt + pepper + lemon. Done in 90s.",
+    ],
+  },
+  {
+    id: "rec-roast-lunch", name: "Cold Roast Chicken Plate", meal: "LUNCH", prepMin: 5,
+    description: "Sunday roast leftovers. The athlete's meal-prep.",
+    tags: ["animal-based", "high-protein", "british"],
+    kcal: 510, p: 55, f: 28, c: 8,
+    ingredients: [
+      { item: "Whole roast chicken (meat+skin)", qty: "200g" },
+      { item: "Strawberries", qty: "100g" },
+    ],
+    steps: [
+      "Strip cold roast chicken from carcass.",
+      "Plate with strawberries. Sea salt the chicken. Done.",
+    ],
+  },
+  {
+    id: "rec-cottage-stack", name: "Cottage Cheese Stack", meal: "LUNCH", prepMin: 3,
+    description: "Slow-digesting casein with raw honey + raspberries.",
+    tags: ["animal-based", "high-protein"],
+    kcal: 312, p: 23, f: 9, c: 36,
+    ingredients: [
+      { item: "Cottage cheese (full fat)", qty: "200g" },
+      { item: "Raspberries", qty: "100g" },
+      { item: "Raw honey", qty: "1 tbsp (21g)" },
+    ],
+    steps: [
+      "Cottage cheese into bowl. Top with raspberries.",
+      "Drizzle honey. Eat slow — casein digests for 4-6 hr.",
+    ],
+  },
+
+  /* DINNER · 6 */
+  {
+    id: "rec-lamb-shoulder", name: "Slow-Roast Lamb Shoulder", meal: "DINNER", prepMin: 240,
+    description: "Sunday ritual. Pulls apart with a fork.",
+    tags: ["animal-based", "british", "low-carb"],
+    kcal: 928, p: 63, f: 77, c: 0,
+    ingredients: [
+      { item: "Lamb shoulder", qty: "250g (per portion)" },
+      { item: "Butter", qty: "30g" },
+      { item: "Garlic, rosemary, salt", qty: "generous" },
+    ],
+    steps: [
+      "Score fat. Rub salt + rosemary + garlic.",
+      "Roast 160°C / 4 hours. Don't peek.",
+      "Rest 20 min. Pull apart with fork. Spoon over butter from the tray.",
+    ],
+  },
+  {
+    id: "rec-ribeye-marrow", name: "Ribeye & Marrow", meal: "DINNER", prepMin: 25,
+    description: "Carnivore peak meal. Steakhouse at home.",
+    tags: ["carnivore", "low-carb", "high-protein"],
+    kcal: 914, p: 65, f: 73, c: 0,
+    ingredients: [
+      { item: "Ribeye", qty: "250g" },
+      { item: "Bone marrow", qty: "30g (one bone)" },
+      { item: "Sea salt flake", qty: "heavy" },
+    ],
+    steps: [
+      "Roast marrow bone 220°C / 15 min until bubbling.",
+      "Sear ribeye cast iron 2 min per side, baste in butter.",
+      "Slice ribeye, scoop marrow over each slice. Crack salt on top.",
+    ],
+  },
+  {
+    id: "rec-pork-belly", name: "Crackling Pork Belly", meal: "DINNER", prepMin: 180,
+    description: "Pork belly slow-roasted, skin shattered with crackling.",
+    tags: ["animal-based", "low-carb", "british"],
+    kcal: 1070, p: 19, f: 106, c: 8,
+    ingredients: [
+      { item: "Pork belly", qty: "200g" },
+      { item: "Sea salt (heavy on skin)", qty: "1 tbsp" },
+      { item: "Blackberries", qty: "80g (palate cleanser)" },
+    ],
+    steps: [
+      "Score skin. Salt heavy. Pat dry.",
+      "Roast 160°C / 2 hr to soften, then 220°C / 30 min for crackling.",
+      "Rest. Smash crackling with knife handle. Plate with berries.",
+    ],
+  },
+  {
+    id: "rec-roast-chicken", name: "Whole Roast Chicken (per serving)", meal: "DINNER", prepMin: 90,
+    description: "Spatchcock roasted in butter. Sunday classic.",
+    tags: ["animal-based", "high-protein", "british"],
+    kcal: 932, p: 81, f: 66, c: 0,
+    ingredients: [
+      { item: "Roast chicken (meat + skin)", qty: "300g per portion" },
+      { item: "Butter (basted)", qty: "30g per portion" },
+    ],
+    steps: [
+      "Spatchcock the bird. Slather with soft butter. Salt heavy.",
+      "Roast 200°C / 60 min until juices run clear.",
+      "Rest 15 min. Carve. Spoon pan butter on top.",
+    ],
+  },
+  {
+    id: "rec-bangers-mash", name: "Cumberland Bangers & Mash", meal: "DINNER", prepMin: 35,
+    description: "British classic. Refeed-day comfort fuel.",
+    tags: ["british", "refeed"],
+    kcal: 802, p: 23, f: 54, c: 59,
+    ingredients: [
+      { item: "Cumberland sausages", qty: "2 (120g)" },
+      { item: "Jacket potato", qty: "1 medium (250g)" },
+      { item: "Butter", qty: "30g" },
+    ],
+    steps: [
+      "Bake jacket 200°C / 50 min.",
+      "Grill sausages 12 min, turning. No prick.",
+      "Smash jacket flesh with butter into mash texture. Plate sausages on top.",
+    ],
+  },
+  {
+    id: "rec-mussels-bacon", name: "Mussels & Streaky Bacon", meal: "DINNER", prepMin: 15,
+    description: "Coastal British meal. Zinc + omega-3 + fat.",
+    tags: ["animal-based", "low-carb", "british"],
+    kcal: 485, p: 49, f: 26, c: 11,
+    ingredients: [
+      { item: "Mussels (cleaned)", qty: "250g" },
+      { item: "Streaky bacon", qty: "50g, diced" },
+      { item: "Butter", qty: "10g" },
+    ],
+    steps: [
+      "Render bacon in deep pan. Add butter.",
+      "Throw mussels in. Lid on. Steam 3-4 min until shells open.",
+      "Discard any unopened. Pour mussels + smoked bacon broth into bowl.",
+    ],
+  },
+
+  /* POST-WORKOUT · 4 */
+  {
+    id: "rec-recovery-yog", name: "Hyrox Recovery Yog Bowl", meal: "POST-WO", prepMin: 3,
+    description: "Casein + simple carbs + polyphenols. Glycogen + repair.",
+    tags: ["recovery", "hyrox", "high-protein"],
+    kcal: 351, p: 12, f: 21, c: 31,
+    ingredients: [
+      { item: "Greek-style yoghurt (full fat)", qty: "200g" },
+      { item: "Raspberries", qty: "80g" },
+      { item: "Raw honey", qty: "2/3 tbsp (14g)" },
+    ],
+    steps: [
+      "Yog in bowl. Berries on top. Honey drizzle.",
+      "Eat within 30 min of finishing the session.",
+    ],
+    why: "Honey fructose hits liver glycogen, glucose hits muscle glycogen. Casein primes overnight repair.",
+  },
+  {
+    id: "rec-glycogen-bomb", name: "Glycogen Bomb", meal: "POST-WO", prepMin: 18,
+    description: "Heavy training day refuel. Rapid carb + lean protein.",
+    tags: ["refeed", "recovery", "hyrox"],
+    kcal: 560, p: 52, f: 7, c: 69,
+    ingredients: [
+      { item: "Chicken breast", qty: "150g" },
+      { item: "White rice (cooked)", qty: "200g" },
+      { item: "Maple syrup", qty: "1 tbsp (20g)" },
+    ],
+    steps: [
+      "Pan-cook chicken breast.",
+      "Boil white rice. Drizzle maple over rice.",
+      "Plate. Eat fast — within 60 min post-session.",
+    ],
+    why: "GLUT4 transporters open post-training. White rice + maple = fastest glycogen repleter.",
+  },
+  {
+    id: "rec-liver-refuel", name: "Liver Refuel", meal: "POST-WO", prepMin: 18,
+    description: "Heavy lifting recovery. Iron + B12 + carbs.",
+    tags: ["animal-based", "recovery", "refeed"],
+    kcal: 425, p: 31, f: 16, c: 38,
+    ingredients: [
+      { item: "Beef liver", qty: "100g" },
+      { item: "New potatoes (boiled)", qty: "200g" },
+      { item: "Butter", qty: "14g" },
+    ],
+    steps: [
+      "Boil new potatoes 12 min, drain.",
+      "Sear liver 90s per side in butter.",
+      "Plate. Eat warm.",
+    ],
+  },
+  {
+    id: "rec-mack-rice", name: "Mackerel & Rice", meal: "POST-WO", prepMin: 15,
+    description: "DHA repair + glycogen reload. Crossfit recovery.",
+    tags: ["animal-based", "recovery", "refeed"],
+    kcal: 653, p: 33, f: 38, c: 42,
+    ingredients: [
+      { item: "Mackerel fillet (grilled)", qty: "150g" },
+      { item: "White rice (cooked)", qty: "150g" },
+    ],
+    steps: [
+      "Grill mackerel 4 min skin-down, 2 min flip.",
+      "Boil rice. Plate fish on top of rice. Squeeze lemon.",
+    ],
+  },
+
+  /* SNACK · 4 */
+  {
+    id: "rec-snack-box", name: "Carnivore Snack Box", meal: "SNACK", prepMin: 2,
+    description: "Pork scratchings + cheddar. Pub food, sniper-precise.",
+    tags: ["carnivore", "low-carb", "high-protein"],
+    kcal: 390, p: 28, f: 30, c: 0,
+    ingredients: [
+      { item: "Pork scratchings", qty: "30g" },
+      { item: "Mature Cheddar", qty: "50g" },
+    ],
+    steps: ["Open scratchings. Cube cheddar. Eat. Done."],
+  },
+  {
+    id: "rec-honey-eggs", name: "Honey Eggs Trio", meal: "SNACK", prepMin: 6,
+    description: "Soft-boiled eggs with raw honey drizzle.",
+    tags: ["animal-based", "high-protein"],
+    kcal: 275, p: 19, f: 16, c: 13,
+    ingredients: [
+      { item: "Whole eggs", qty: "3 medium" },
+      { item: "Raw honey", qty: "2/3 tbsp (14g)" },
+    ],
+    steps: [
+      "Soft boil eggs 6 min in rapid water.",
+      "Cool 30s under cold tap. Peel.",
+      "Plate, drizzle honey, sea salt flake. Eat warm.",
+    ],
+  },
+  {
+    id: "rec-salmon-roll", name: "Smoked Salmon & Avocado Roll", meal: "SNACK", prepMin: 4,
+    description: "No bread, no rice. Pure protein-fat snack.",
+    tags: ["animal-based", "low-carb", "high-protein"],
+    kcal: 406, p: 26, f: 29, c: 15,
+    ingredients: [
+      { item: "Smoked salmon", qty: "100g" },
+      { item: "Cottage cheese", qty: "50g" },
+      { item: "Avocado", qty: "1 whole (150g)" },
+    ],
+    steps: [
+      "Lay smoked salmon flat. Smear cottage cheese.",
+      "Slice avocado lengthways, place on top.",
+      "Roll up tight. Slice into rounds. Eat.",
+    ],
+  },
+  {
+    id: "rec-yog-berries", name: "Greek Yog & Berries", meal: "SNACK", prepMin: 1,
+    description: "Bedtime casein + polyphenols.",
+    tags: ["animal-based", "recovery"],
+    kcal: 390, p: 15, f: 25, c: 27,
+    ingredients: [
+      { item: "Greek-style yoghurt (full fat)", qty: "250g" },
+      { item: "Blueberries", qty: "100g" },
+    ],
+    steps: ["Yog in bowl. Berries on top. Eat. Sleep."],
+    why: "Casein digests 4-6hr overnight, sustaining MPS through fasted state.",
+  },
 ];
 
 /* ---------- Tips (Daily Intel + Vault archive) ---------- */
@@ -767,6 +1196,280 @@ export const canPerform = (w: Workout, available: Equipment[]): boolean => {
   }
   return true;
 };
+
+/* ---------- INGREDIENTS (SCAN — Phase C) ---------- */
+export type RiskLevel = "red" | "amber" | "green";
+export type Ingredient = {
+  id: string;
+  name: string;
+  aliases?: string[];
+  level: RiskLevel;
+  category: string;
+  summary: string;
+  citation?: string;
+  swaps?: string[];
+};
+
+export const INGREDIENTS: Ingredient[] = [
+  // ===== RED — endocrine, carcinogen, photo-toxic =====
+  { id: "methylparaben", name: "Methylparaben", aliases: ["e218"], level: "red", category: "Paraben",
+    summary: "Xenoestrogen detected in breast tumour tissue. Mimics estradiol.",
+    citation: "Darbre et al. (2004) J Appl Toxicol 24(1):5", swaps: ["Phenoxyethanol (low %)", "Sodium Benzoate", "Potassium Sorbate"] },
+  { id: "ethylparaben", name: "Ethylparaben", aliases: ["e214"], level: "red", category: "Paraben",
+    summary: "Same xenoestrogen class as methylparaben. Banned in some EU cosmetic categories.",
+    citation: "Darbre et al. (2004) J Appl Toxicol 24(1):5", swaps: ["Phenoxyethanol", "Sodium Benzoate"] },
+  { id: "propylparaben", name: "Propylparaben", aliases: ["e216"], level: "red", category: "Paraben",
+    summary: "Stronger estrogen receptor binding than methyl/ethyl variants. Linked to reduced sperm motility.",
+    citation: "Meeker et al. (2011) Environ Health Perspect 119(2):252", swaps: ["Phenoxyethanol"] },
+  { id: "butylparaben", name: "Butylparaben", level: "red", category: "Paraben",
+    summary: "Highest estrogenic potency in paraben family. Restricted concentrations in EU.",
+    citation: "Routledge et al. (1998) Toxicol Appl Pharmacol 153(1):12", swaps: ["Sodium Benzoate"] },
+  { id: "isopropylparaben", name: "Isopropylparaben", level: "red", category: "Paraben",
+    summary: "Banned in EU cosmetics (2014) due to unverified safety profile.",
+    citation: "EU Regulation (EC) No 358/2014" },
+  { id: "isobutylparaben", name: "Isobutylparaben", level: "red", category: "Paraben",
+    summary: "Banned in EU cosmetics (2014). Suspected endocrine disruptor.",
+    citation: "EU Regulation (EC) No 358/2014" },
+  { id: "phthalate-dep", name: "Diethyl Phthalate", aliases: ["dep"], level: "red", category: "Phthalate",
+    summary: "Hidden inside 'Fragrance/Parfum'. Reduces serum testosterone & alters thyroid hormone.",
+    citation: "Meeker et al. (2007) Environ Health Perspect 115(7):1029", swaps: ["Fragrance-free formulas"] },
+  { id: "phthalate-dbp", name: "Dibutyl Phthalate", aliases: ["dbp"], level: "red", category: "Phthalate",
+    summary: "Anti-androgenic. Banned in EU cosmetics. Still found in some imported nail products.",
+    citation: "EU Regulation (EC) No 1223/2009 Annex II" },
+  { id: "phthalate-dehp", name: "Bis(2-ethylhexyl) Phthalate", aliases: ["dehp"], level: "red", category: "Phthalate",
+    summary: "IARC Group 2B carcinogen. Reproductive toxicant.",
+    citation: "IARC Monograph Vol 101 (2012)" },
+  { id: "fragrance", name: "Fragrance", aliases: ["parfum", "perfume"], level: "red", category: "Hidden Mixture",
+    summary: "Trade-secret cocktail of 50–250 chemicals. Common phthalate carrier and skin sensitiser.",
+    citation: "Steinemann (2016) Air Qual Atmos Health 9(8):861", swaps: ["Essential oil blends (labelled)", "Fragrance-free"] },
+  { id: "oxybenzone", name: "Oxybenzone", aliases: ["benzophenone-3", "bp-3"], level: "red", category: "UV Filter",
+    summary: "Detected in 96% of US adult urine. Endocrine activity. Coral-bleaching: banned in Hawaii.",
+    citation: "Calafat et al. (2008) Environ Health Perspect 116(7):893", swaps: ["Zinc Oxide (non-nano)", "Titanium Dioxide"] },
+  { id: "octinoxate", name: "Octinoxate", aliases: ["octyl methoxycinnamate", "ethylhexyl methoxycinnamate"], level: "red", category: "UV Filter",
+    summary: "Estrogenic activity. Crosses placenta. Banned with oxybenzone in Hawaii (2021).",
+    citation: "Krause et al. (2012) Int J Androl 35(3):424", swaps: ["Zinc Oxide", "Titanium Dioxide"] },
+  { id: "homosalate", name: "Homosalate", level: "red", category: "UV Filter",
+    summary: "EU restricted to 7.34% in face products (2021). Endocrine activity.",
+    citation: "EU SCCS/1622/20" },
+  { id: "octocrylene", name: "Octocrylene", level: "red", category: "UV Filter",
+    summary: "Degrades to benzophenone (carcinogen) over time. Photo-allergen.",
+    citation: "Downs et al. (2021) Chemosphere 277:130293", swaps: ["Mineral filters only"] },
+  { id: "retinyl-palmitate", name: "Retinyl Palmitate", level: "red", category: "Vit A Ester",
+    summary: "In sunscreen, accelerates UV-induced skin tumour formation in mice. Avoid in daylight products.",
+    citation: "NTP-NCTR (2012) Photocarcinogenesis Study", swaps: ["Bakuchiol (night)", "Granactive Retinoid"] },
+  { id: "aluminum-chlorohydrate", name: "Aluminum Chlorohydrate", level: "red", category: "Antiperspirant",
+    summary: "Plugs sweat ducts. Detected in breast tumour tissue. Estrogenic activity in vitro.",
+    citation: "Darbre (2005) J Inorg Biochem 99(9):1912", swaps: ["Magnesium Hydroxide deodorant", "Baking Soda formulas"] },
+  { id: "aluminum-zirconium", name: "Aluminum Zirconium Tetrachlorohydrex", level: "red", category: "Antiperspirant",
+    summary: "Same concerns as aluminum chlorohydrate. Banned in aerosols by FDA.",
+    citation: "FDA 21 CFR 350.10" },
+  { id: "triclosan", name: "Triclosan", level: "red", category: "Antimicrobial",
+    summary: "Banned by FDA in soaps (2017). Endocrine disruption, gut-microbiome damage, antibiotic resistance.",
+    citation: "FDA 81 FR 61106 (2016)", swaps: ["Plain soap & water", "Tea tree oil"] },
+  { id: "triclocarban", name: "Triclocarban", level: "red", category: "Antimicrobial",
+    summary: "Banned by FDA (2017) alongside triclosan. Bioaccumulates.",
+    citation: "FDA 81 FR 61106 (2016)" },
+  { id: "formaldehyde", name: "Formaldehyde", level: "red", category: "Preservative",
+    summary: "IARC Group 1 carcinogen. Banned in EU cosmetics. Often hidden as 'releaser'.",
+    citation: "IARC Monograph Vol 100F (2012)" },
+  { id: "dmdm-hydantoin", name: "DMDM Hydantoin", level: "red", category: "Formaldehyde Releaser",
+    summary: "Slowly releases formaldehyde. Class 1 contact allergen.",
+    citation: "de Groot & White (2011) Contact Dermatitis 64(1):2", swaps: ["Sodium Benzoate", "Phenoxyethanol"] },
+  { id: "quaternium-15", name: "Quaternium-15", level: "red", category: "Formaldehyde Releaser",
+    summary: "Most potent formaldehyde releaser. North American Contact Dermatitis Group flagged it as top 5 allergen.",
+    citation: "Warshaw et al. (2015) Dermatitis 26(1):49" },
+  { id: "imidazolidinyl-urea", name: "Imidazolidinyl Urea", level: "red", category: "Formaldehyde Releaser",
+    summary: "Formaldehyde releaser. Common allergen.", citation: "de Groot et al. (2010) Contact Dermatitis 62(1):2" },
+  { id: "hydroquinone", name: "Hydroquinone", level: "red", category: "Skin Lightener",
+    summary: "Banned OTC in EU & UK. Linked to ochronosis and rebound hyperpigmentation.",
+    citation: "EU Regulation (EC) 1223/2009", swaps: ["Niacinamide", "Tranexamic Acid", "Alpha Arbutin"] },
+  { id: "coal-tar", name: "Coal Tar", aliases: ["ci 77266"], level: "red", category: "Dye",
+    summary: "IARC Group 1 carcinogen. Still in some anti-dandruff shampoos.",
+    citation: "IARC Monograph Vol 100F (2012)" },
+  { id: "lead-acetate", name: "Lead Acetate", level: "red", category: "Heavy Metal",
+    summary: "Neurotoxin. Banned in hair dye by FDA (2018). Found in some imported products.",
+    citation: "FDA 83 FR 50490 (2018)" },
+  { id: "bha", name: "BHA", aliases: ["butylated hydroxyanisole"], level: "red", category: "Antioxidant",
+    summary: "IARC Group 2B (possibly carcinogenic). Endocrine disruptor in animal studies.",
+    citation: "IARC Monograph Vol 40 (1986)", swaps: ["Tocopherol (Vit E)", "Rosemary Extract"] },
+  { id: "bht", name: "BHT", aliases: ["butylated hydroxytoluene"], level: "red", category: "Antioxidant",
+    summary: "Tumour promoter in long-term rodent studies. Bioaccumulates.",
+    citation: "Lanigan & Yamarik (2002) Int J Toxicol 21(Suppl 2):19", swaps: ["Tocopherol"] },
+  { id: "peg", name: "PEG Compounds", aliases: ["peg-", "polyethylene glycol"], level: "red", category: "Solvent",
+    summary: "Often contaminated with 1,4-dioxane (probable carcinogen) from manufacture.",
+    citation: "Fruijtier-Pölloth (2005) Toxicology 214(1-2):1", swaps: ["Glycerin", "Squalane"] },
+  { id: "petrolatum", name: "Petrolatum", aliases: ["petroleum jelly", "mineral oil"], level: "red", category: "Petroleum",
+    summary: "Unrefined grades contain PAH carcinogens. Cosmetic-grade should be 'USP white'.",
+    citation: "EWG Skin Deep · CIR Final Report (2014)", swaps: ["Shea Butter", "Beeswax", "Lanolin"] },
+
+  // ===== AMBER — moderate concern =====
+  { id: "sls", name: "Sodium Lauryl Sulfate", aliases: ["sls"], level: "amber", category: "Surfactant",
+    summary: "Strong skin/eye irritant. Disrupts barrier function. Not carcinogenic but harsh.",
+    citation: "Bondi et al. (2015) Cosmet Toilet 130:60", swaps: ["Decyl Glucoside", "Sodium Cocoyl Isethionate"] },
+  { id: "sles", name: "Sodium Laureth Sulfate", aliases: ["sles"], level: "amber", category: "Surfactant",
+    summary: "Less harsh than SLS but ethoxylation can leave 1,4-dioxane traces.",
+    citation: "Black & Newsome (2001) J Surfactants Deterg 4(2):201" },
+  { id: "phenoxyethanol", name: "Phenoxyethanol", level: "amber", category: "Preservative",
+    summary: "Effective preservative. EU caps at 1%. Avoid for infants under 6 months.",
+    citation: "EU SCCS/1575/16" },
+  { id: "polysorbate-60", name: "Polysorbate 60", level: "amber", category: "Emulsifier",
+    summary: "Ethoxylated — possible 1,4-dioxane contamination. Generally safe in finished products.",
+    citation: "CIR (1984) J Am Coll Toxicol 3(5):1" },
+  { id: "polysorbate-80", name: "Polysorbate 80", level: "amber", category: "Emulsifier",
+    summary: "Same concern as polysorbate 60. Look for 'free of 1,4-dioxane' certifications." },
+  { id: "cyclomethicone", name: "Cyclomethicone", aliases: ["d4", "d5"], level: "amber", category: "Silicone",
+    summary: "D4 and D5 are bioaccumulative; EU restricts D4 in rinse-off products.",
+    citation: "EU Regulation (EU) 2018/35", swaps: ["Squalane", "Caprylic/Capric Triglyceride"] },
+  { id: "dimethicone", name: "Dimethicone", level: "amber", category: "Silicone",
+    summary: "Generally safe but occlusive. Can trap dirt/sebum if not fully rinsed off." },
+  { id: "talc", name: "Talc", aliases: ["magnesium silicate"], level: "amber", category: "Mineral",
+    summary: "Cosmetic-grade should be asbestos-free. Avoid in genital products (ovarian cancer link).",
+    citation: "Penninkilampi & Eslick (2018) Epidemiology 29(1):41", swaps: ["Cornstarch", "Arrowroot Powder"] },
+  { id: "methylisothiazolinone", name: "Methylisothiazolinone", aliases: ["mi", "kathon"], level: "amber", category: "Preservative",
+    summary: "EU allergen of the year 2013. Restricted to rinse-off at 0.0015%.",
+    citation: "Lundov et al. (2011) Br J Dermatol 165(6):1178" },
+  { id: "deа", name: "Diethanolamine", aliases: ["dea"], level: "amber", category: "pH Adjuster",
+    summary: "Forms nitrosamines (carcinogen) when combined with nitrites. EU restricts.",
+    citation: "Fan et al. (2010) Toxicol Sci 117(2):422" },
+  { id: "tea", name: "Triethanolamine", aliases: ["tea"], level: "amber", category: "pH Adjuster",
+    summary: "Same nitrosamine-formation concern as DEA when combined with preservatives." },
+  { id: "toluene", name: "Toluene", level: "amber", category: "Solvent",
+    summary: "Neurotoxic with chronic exposure. Restricted in EU nail products to 25%.",
+    citation: "EU Regulation (EC) 1223/2009 Annex III" },
+  { id: "resorcinol", name: "Resorcinol", level: "amber", category: "Hair Dye",
+    summary: "Skin sensitiser & possible endocrine disruptor (thyroid).",
+    citation: "Lynch et al. (2002) Food Chem Toxicol 40(8):1175" },
+  { id: "cocamidopropyl-betaine", name: "Cocamidopropyl Betaine", level: "amber", category: "Surfactant",
+    summary: "Generally safe but contact-allergen for ~3% of users.",
+    citation: "Foti et al. (2003) Contact Dermatitis 48(4):194" },
+
+  // ===== GREEN — clean / supportive =====
+  { id: "water", name: "Aqua", aliases: ["water"], level: "green", category: "Base",
+    summary: "Solvent. Safe." },
+  { id: "glycerin", name: "Glycerin", aliases: ["glycerine", "glycerol"], level: "green", category: "Humectant",
+    summary: "Vegetable-derived humectant. Pulls moisture into skin. Excellent safety profile." },
+  { id: "hyaluronic-acid", name: "Hyaluronic Acid", aliases: ["sodium hyaluronate"], level: "green", category: "Humectant",
+    summary: "Holds 1000× its weight in water. Naturally present in skin and joints." },
+  { id: "niacinamide", name: "Niacinamide", aliases: ["vitamin b3", "nicotinamide"], level: "green", category: "Active",
+    summary: "Reduces hyperpigmentation, improves barrier. ~5% is the sweet spot.",
+    citation: "Hakozaki et al. (2002) Br J Dermatol 147(1):20" },
+  { id: "squalane", name: "Squalane", aliases: ["squalene"], level: "green", category: "Emollient",
+    summary: "Plant-derived (olive/sugarcane) lipid. Non-comedogenic. Mimics skin sebum." },
+  { id: "shea-butter", name: "Shea Butter", aliases: ["butyrospermum parkii"], level: "green", category: "Emollient",
+    summary: "Whole-plant fat. Vitamin E, fatty acids, anti-inflammatory triterpenes." },
+  { id: "coconut-oil", name: "Coconut Oil", aliases: ["cocos nucifera"], level: "green", category: "Emollient",
+    summary: "Lauric acid antimicrobial. Comedogenic for some skin types — patch test." },
+  { id: "olive-oil", name: "Olive Oil", aliases: ["olea europaea"], level: "green", category: "Emollient",
+    summary: "Squalene-rich. Mediterranean traditional skincare." },
+  { id: "jojoba-oil", name: "Jojoba Oil", aliases: ["simmondsia chinensis"], level: "green", category: "Emollient",
+    summary: "Liquid wax structurally identical to skin sebum. Non-comedogenic." },
+  { id: "argan-oil", name: "Argan Oil", aliases: ["argania spinosa"], level: "green", category: "Emollient",
+    summary: "Vitamin E, oleic & linoleic acid. Non-occlusive. Patch test for tree-nut allergies." },
+  { id: "tocopherol", name: "Tocopherol", aliases: ["vitamin e"], level: "green", category: "Antioxidant",
+    summary: "Lipid-soluble antioxidant. Stabilises oils and supports skin barrier." },
+  { id: "ascorbic-acid", name: "Ascorbic Acid", aliases: ["vitamin c", "l-ascorbic acid"], level: "green", category: "Active",
+    summary: "Antioxidant + collagen co-factor. 10–20% at pH ≤3.5 for efficacy.",
+    citation: "Pinnell et al. (2001) Dermatol Surg 27(2):137" },
+  { id: "aloe-vera", name: "Aloe Vera", aliases: ["aloe barbadensis"], level: "green", category: "Soothing",
+    summary: "Polysaccharides, vitamins, anti-inflammatory. Cooling effect." },
+  { id: "beeswax", name: "Beeswax", aliases: ["cera alba"], level: "green", category: "Wax",
+    summary: "Natural occlusive. Long-chain esters lock in moisture." },
+  { id: "lanolin", name: "Lanolin", level: "green", category: "Emollient",
+    summary: "Wool-derived. Closest natural mimic of human sebum. Safe but possible allergen." },
+  { id: "caprylic-capric-triglyceride", name: "Caprylic/Capric Triglyceride", level: "green", category: "Emollient",
+    summary: "Coconut-derived medium-chain triglyceride. Lightweight, non-comedogenic." },
+  { id: "citric-acid", name: "Citric Acid", level: "green", category: "pH Adjuster",
+    summary: "Natural pH adjuster. AHA at higher concentrations." },
+  { id: "lactic-acid", name: "Lactic Acid", level: "green", category: "AHA",
+    summary: "Gentle alpha-hydroxy acid. Hydrating exfoliant. Less irritating than glycolic." },
+  { id: "salicylic-acid", name: "Salicylic Acid", level: "green", category: "BHA",
+    summary: "Oil-soluble exfoliant. Penetrates pores. Anti-acne at 0.5–2%." },
+  { id: "bakuchiol", name: "Bakuchiol", level: "green", category: "Active",
+    summary: "Plant-derived retinol alternative. Comparable wrinkle-reduction without photo-sensitivity.",
+    citation: "Dhaliwal et al. (2019) Br J Dermatol 180(2):289" },
+  { id: "zinc-oxide", name: "Zinc Oxide", level: "green", category: "Mineral UV",
+    summary: "Broad-spectrum mineral sunscreen. Reef-safe. Non-nano preferred." },
+  { id: "titanium-dioxide", name: "Titanium Dioxide", level: "green", category: "Mineral UV",
+    summary: "UVB + UVA-II mineral filter. Pair with zinc oxide for full UVA coverage." },
+  { id: "sodium-bicarbonate", name: "Sodium Bicarbonate", aliases: ["baking soda"], level: "green", category: "Mineral",
+    summary: "Mild alkaliser. Common natural deodorant base." },
+  { id: "magnesium-stearate", name: "Magnesium Stearate", level: "green", category: "Mineral",
+    summary: "Inert mineral binder. Safe at cosmetic concentrations." },
+];
+
+/* Tokenise an ingredient list and match against the DB */
+export type ScanResult = {
+  matches: Ingredient[];
+  unknown: string[];
+  reds: number;
+  ambers: number;
+  greens: number;
+  score: number; // 0–100
+  verdict: RiskLevel;
+};
+
+export const scanLabel = (input: string): ScanResult => {
+  const tokens = input
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\*/g, "")
+    .split(/[,;·•|]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 1);
+
+  const matches: Ingredient[] = [];
+  const seen = new Set<string>();
+  const unknown: string[] = [];
+
+  for (const t of tokens) {
+    let found: Ingredient | undefined;
+    for (const ing of INGREDIENTS) {
+      const n = ing.name.toLowerCase();
+      const aliases = (ing.aliases ?? []).map((a) => a.toLowerCase());
+      if (
+        t === n || aliases.includes(t) ||
+        t.includes(n) || aliases.some((a) => t.includes(a)) ||
+        (n.length >= 6 && n.includes(t) && t.length >= 6)
+      ) {
+        found = ing;
+        break;
+      }
+    }
+    if (found) {
+      if (!seen.has(found.id)) {
+        matches.push(found);
+        seen.add(found.id);
+      }
+    } else if (t.length >= 3) unknown.push(t);
+  }
+
+  const reds = matches.filter((m) => m.level === "red").length;
+  const ambers = matches.filter((m) => m.level === "amber").length;
+  const greens = matches.filter((m) => m.level === "green").length;
+  const score = Math.max(0, Math.min(100, 100 - reds * 18 - ambers * 6));
+  const verdict: RiskLevel = score >= 70 ? "green" : score >= 40 ? "amber" : "red";
+
+  return { matches, unknown, reds, ambers, greens, score, verdict };
+};
+
+export const SCAN_SAMPLES: { label: string; ingredients: string }[] = [
+  {
+    label: "Drugstore Body Lotion",
+    ingredients: "Aqua, Glycerin, Mineral Oil, Cetyl Alcohol, Dimethicone, Stearic Acid, PEG-100 Stearate, Fragrance, Methylparaben, Propylparaben, BHT, DMDM Hydantoin, Disodium EDTA",
+  },
+  {
+    label: "High-Street Shampoo",
+    ingredients: "Aqua, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Sodium Chloride, Fragrance, Methylisothiazolinone, Methylchloroisothiazolinone, Polyquaternium-10, Citric Acid, Hexylene Glycol",
+  },
+  {
+    label: "Generic Sunscreen SPF 50",
+    ingredients: "Aqua, Octinoxate, Octocrylene, Avobenzone, Oxybenzone, Homosalate, Glycerin, Tocopherol, Phenoxyethanol, Fragrance",
+  },
+  {
+    label: "Clean Moisturiser",
+    ingredients: "Aqua, Glycerin, Squalane, Niacinamide, Hyaluronic Acid, Shea Butter, Tocopherol, Phenoxyethanol, Citric Acid",
+  },
+];
 
 /* ---------- XP / Credits ---------- */
 export const XP_RULES = {

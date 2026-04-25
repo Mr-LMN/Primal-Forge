@@ -101,3 +101,65 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  PrimalForge — brutalist mobile-first metabolic tracker (Expo) for biohackers / Hyrox / Crossfit /
+  carnivore + animal-based athletes. 5-tab navigation (HUD · FUEL · FORGE · SCAN · VAULT), local-only
+  AsyncStorage, Katch-McArdle baseline, British whole-foods DB, harmful-ingredient SCAN, XP/credits
+  VAULT, recipes inside FUEL, burpee penalty for missed macros.
+
+frontend:
+  - task: "Refactor index.tsx (~1700 lines) into modular src/screens + src/components"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/index.tsx, /app/frontend/src/screens/*, /app/frontend/src/components/*, /app/frontend/src/types.ts, /app/frontend/src/utils.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Split monolith into Onboarding/HUDView/FuelView/ForgeView/ScanView/VaultView screens, Header/TabBar/WeightCheckIn components, types.ts and utils.ts. index.tsx now 438 lines (orchestrator only). Verified onboarding flow + tab nav via screenshot."
+
+  - task: "SCAN tab — paste ingredient list, get Red/Amber/Green verdict"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/screens/ScanView.tsx, /app/frontend/src/data.ts (INGREDIENTS, scanLabel)"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Sample scan (drugstore lotion) flagged 7 RED, 2 AMBER, 2 CLEAN with verdict 0/AVOID. Save to history works. 80+ harmful ingredients in DB."
+
+  - task: "Phase B Part 2 — RECIPES inside FUEL tab (25 curated whole-food recipes)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/data.ts (RECIPES), /app/frontend/src/screens/FuelView.tsx, /app/frontend/src/styles.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Added FOODS|RECIPES segmented control inside FUEL. 25 recipes across BREAKFAST/LUNCH/DINNER/POST-WO/SNACK with macros, ingredients, step-by-step method and 'why it works' science note. One-tap LOG creates a serving entry in today's log + grants XP. Meal filter chips. Detail modal with full method. Verified visually."
+
+metadata:
+  created_by: "main_agent"
+  version: "3.0"
+  test_sequence: 5
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Refactor index.tsx into modular structure"
+    - "SCAN tab functionality"
+    - "Recipes inside FUEL tab"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Session 3 complete. Refactor done (index.tsx 1990 → 438 lines, 7 screens + 3 components + types + utils). SCAN tab verified working with verdict logic. RECIPES added — 25 ancestral/Hyrox-friendly meals inside FUEL tab with one-tap log. App is local-only (AsyncStorage), no auth, no backend test creds needed."

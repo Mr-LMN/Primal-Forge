@@ -76,7 +76,9 @@ v4: **equipment**
 - **Athlete-tier upsell**: locked goal in onboarding teases Hyrox/CrossFit/Ironman as next product rung
 - **Equipment-aware filtering** = retention lever (users with home gyms see workouts they can actually do, not generic feed)
 
-## Roadmap (Phase C+)
-- **Phase C**: SCAN tab built — paste ingredient list / barcode → red/amber/green verdict on parabens, phthalates, oxybenzone, retinyl palmitate, fragrance, aluminium salts, etc., 200+ flagged compounds with citations + cleaner alternatives
-- **Phase D**: RECIPES inside FUEL (~25 macro-balanced whole-food recipes, filterable by remaining macros / goal / Hyrox prep tags)
+## Roadmap (Phase D+)
+- ✅ **Phase C** *(complete)*: SCAN tab → paste ingredient list → red/amber/green verdict on parabens, phthalates, oxybenzone, retinyl palmitate, fragrance, aluminium salts, etc., 80+ flagged compounds with citations + cleaner swap suggestions, save-to-history.
+- ✅ **Phase D Part 1** *(complete)*: RECIPES inside FUEL (25 macro-balanced ancestral whole-food recipes — Carnivore Stack, Smoked Mackerel & Eggs, Slow-Roast Lamb Shoulder, Hyrox Recovery Yog Bowl, Glycogen Bomb post-WO, etc.) Filterable by meal (BREAKFAST/LUNCH/DINNER/POST-WO/SNACK). One-tap log → grants meal XP. Detail modal with full method + science note.
+- ✅ **Refactor** *(complete)*: index.tsx 1990 → 438 lines. Split into /src/screens (Onboarding, HUDView, FuelView, ForgeView, ScanView, VaultView), /src/components (Header, TabBar, WeightCheckIn), /src/types.ts, /src/utils.ts.
 - **Phase E**: Adaptive coaching (auto TDEE recalibration from weight trend) · Stripe credit packs · Apple Health/Google Fit step+sleep sync · photo-based BF estimator
+
