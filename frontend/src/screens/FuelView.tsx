@@ -25,10 +25,11 @@ import {
   type RecipeMeal,
 } from "../data";
 import { styles } from "../styles";
-import { haptic, confirmAction } from "../utils";
+import { haptic, confirmAction, fitScore, type MacroRem } from "../utils";
 import type { LogEntry } from "../types";
 
 type FuelMode = "foods" | "recipes";
+type RecipeSort = "default" | "fit";
 
 const MEAL_FILTERS: { id: RecipeMeal | "all"; label: string }[] = [
   { id: "all", label: "ALL" },
@@ -44,13 +45,20 @@ export function FuelView({
   recents,
   onLog,
   onWipe,
+  remaining,
+  favourites,
+  onToggleFavourite,
 }: {
   log: LogEntry[];
   recents: string[];
   onLog: (e: LogEntry) => void;
   onWipe: () => void;
+  remaining: MacroRem;
+  favourites: string[];
+  onToggleFavourite: (recipeId: string) => void;
 }) {
   const [mode, setMode] = useState<FuelMode>("foods");
+  const [recipeSort, setRecipeSort] = useState<RecipeSort>("default");
   const [picker, setPicker] = useState(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [unit, setUnit] = useState<Unit>({ id: "g", label: "g", g: 1 });
@@ -74,10 +82,26 @@ export function FuelView({
     [recents]
   );
 
+  const favSet = useMemo(() => new Set(favourites), [favourites]);
+
   const filteredRecipes = useMemo(() => {
-    if (mealFilter === "all") return RECIPES;
-    return RECIPES.filter((r) => r.meal === mealFilter);
-  }, [mealFilter]);
+    const base = mealFilter === "all" ? RECIPES : RECIPES.filter((r) => r.meal === mealFilter);
+    if (recipeSort === "fit") {
+      return [...base]
+        .map((r) => ({ r, score: fitScore(r, remaining) }))
+        .sort((a, b) => b.score - a.score)
+        .map((x) => x.r);
+    }
+    // default: favourites float to top, preserve original order otherwise
+    return [...base].sort((a, b) => {
+      const af = favSet.has(a.id) ? 1 : 0;
+      const bf = favSet.has(b.id) ? 1 : 0;
+      return bf - af;
+    });
+  }, [mealFilter, recipeSort, remaining, favSet]);
+
+  const fitBadgeColor = (score: number) =>
+    score >= 75 ? C.optimal : score >= 50 ? C.warning : C.penalty;
 
   const availableUnits = useMemo<Unit[]>(() => {
     const base: Unit = { id: "g", label: "g", g: 1 };
@@ -270,9 +294,49 @@ export function FuelView({
               })}
             </View>
 
+            <Text style={[styles.subKicker, { marginTop: 4 }]}>SORT</Text>
+            <View style={styles.recipeSortRow} testID="recipe-sort-toggle">
+              <TouchableOpacity
+                testID="recipe-sort-default"
+                onPress={() => { haptic("light"); setRecipeSort("default"); }}
+                style={[styles.recipeSortBtn, recipeSort === "default" && styles.recipeSortBtnActive]}
+              >
+                <Ionicons name="star" size={11} color={recipeSort === "default" ? C.bg : C.gold} />
+                <Text style={[styles.recipeSortText, recipeSort === "default" && { color: C.bg }]}>FAVES TOP</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="recipe-sort-fit"
+                onPress={() => { haptic("light"); setRecipeSort("fit"); }}
+                style={[styles.recipeSortBtn, recipeSort === "fit" && styles.recipeSortBtnActive]}
+              >
+                <Ionicons name="flash" size={11} color={recipeSort === "fit" ? C.bg : C.science} />
+                <Text style={[styles.recipeSortText, recipeSort === "fit" && { color: C.bg }]}>FIT MY MACROS</Text>
+              </TouchableOpacity>
+            </View>
+
+            {recipeSort === "fit" && (
+              <View style={styles.fitHeaderBox} testID="fit-remaining">
+                <Text style={styles.subKicker}>REMAINING TODAY</Text>
+                <View style={styles.fitRemainRow}>
+                  <Text style={styles.fitRemainKcal}>{Math.round(remaining.kcal)} kcal</Text>
+                  <Text style={[styles.fitRemainMacro, { color: C.science }]}>{Math.round(remaining.p)}P</Text>
+                  <Text style={[styles.fitRemainMacro, { color: C.warning }]}>{Math.round(remaining.f)}F</Text>
+                  <Text style={[styles.fitRemainMacro, { color: C.optimal }]}>{Math.round(remaining.c)}C</Text>
+                </View>
+                <Text style={styles.fitRemainHint}>
+                  {remaining.kcal <= 0
+                    ? "Goal hit. Below shows leftover-friendly picks."
+                    : "Recipes ranked by closeness — higher = better fit."}
+                </Text>
+              </View>
+            )}
+
             <Text style={[styles.subKicker, { marginTop: 4 }]}>{filteredRecipes.length} RECIPES</Text>
 
-            {filteredRecipes.map((r) => (
+            {filteredRecipes.map((r) => {
+              const isFav = favSet.has(r.id);
+              const score = recipeSort === "fit" ? fitScore(r, remaining) : null;
+              return (
               <View key={r.id} style={styles.recipeCard} testID={`recipe-${r.id}`}>
                 <View style={styles.recipeHeadRow}>
                   <View style={styles.recipeMealBadge}>
@@ -282,6 +346,29 @@ export function FuelView({
                     <Ionicons name="time-outline" size={10} color={C.textDim} />
                     <Text style={styles.recipeTimeBadgeText}>{r.prepMin} MIN</Text>
                   </View>
+                  {score !== null && (
+                    <View
+                      style={[styles.fitBadge, { borderColor: fitBadgeColor(score) }]}
+                      testID={`fit-badge-${r.id}`}
+                    >
+                      <Ionicons name="flash" size={9} color={fitBadgeColor(score)} />
+                      <Text style={[styles.fitBadgeText, { color: fitBadgeColor(score) }]}>
+                        FIT {score}
+                      </Text>
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    testID={`recipe-fav-${r.id}`}
+                    onPress={() => onToggleFavourite(r.id)}
+                    hitSlop={10}
+                    style={styles.recipeFavBtn}
+                  >
+                    <Ionicons
+                      name={isFav ? "star" : "star-outline"}
+                      size={18}
+                      color={isFav ? C.gold : C.textDim}
+                    />
+                  </TouchableOpacity>
                 </View>
                 <Text style={styles.recipeName}>{r.name}</Text>
                 <Text style={styles.recipeDesc} numberOfLines={2}>{r.description}</Text>
@@ -334,7 +421,8 @@ export function FuelView({
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
+              );
+            })}
 
             {filteredRecipes.length === 0 && (
               <View style={styles.emptyBox}>
@@ -445,6 +533,18 @@ export function FuelView({
                       <Ionicons name="time-outline" size={10} color={C.textDim} />
                       <Text style={styles.recipeTimeBadgeText}>{openRecipe.prepMin} MIN</Text>
                     </View>
+                    <TouchableOpacity
+                      testID={`recipe-detail-fav-${openRecipe.id}`}
+                      onPress={() => onToggleFavourite(openRecipe.id)}
+                      hitSlop={10}
+                      style={styles.recipeFavBtn}
+                    >
+                      <Ionicons
+                        name={favSet.has(openRecipe.id) ? "star" : "star-outline"}
+                        size={20}
+                        color={favSet.has(openRecipe.id) ? C.gold : C.textDim}
+                      />
+                    </TouchableOpacity>
                   </View>
                   <Text style={styles.recipeDetailTitle}>{openRecipe.name}</Text>
                   <Text style={styles.recipeDetailDesc}>{openRecipe.description}</Text>

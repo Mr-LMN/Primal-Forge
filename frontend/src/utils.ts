@@ -70,6 +70,24 @@ export const buildProfile = (p: {
   };
 };
 
+export type MacroRem = { kcal: number; p: number; f: number; c: number };
+
+// Fit-score for a recipe vs remaining daily macros. Pure maths, 0–100.
+// Higher = better fit. Overshooting kcal penalised harder than undershooting.
+export const fitScore = (
+  r: { kcal: number; p: number; f: number; c: number },
+  rem: MacroRem
+): number => {
+  if (rem.kcal <= 0) return 0;
+  const dKcal = Math.abs(r.kcal - rem.kcal) / Math.max(rem.kcal, 200);
+  const dP = Math.abs(r.p - rem.p) / Math.max(rem.p, 20);
+  const dF = Math.abs(r.f - rem.f) / Math.max(rem.f, 15);
+  const dC = Math.abs(r.c - rem.c) / Math.max(rem.c, 20);
+  const overshoot = Math.max(0, r.kcal - rem.kcal) / Math.max(rem.kcal, 200);
+  const dist = dKcal * 1.5 + dP * 1.2 + dF * 0.6 + dC * 0.6 + overshoot * 1.0;
+  return Math.max(0, Math.min(100, Math.round(100 - dist * 30)));
+};
+
 export const initialXP = (): XPState => ({
   total: 0,
   spent: 0,
