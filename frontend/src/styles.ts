@@ -365,6 +365,57 @@ export const styles = StyleSheet.create({
   foodRowMacros: { color: C.textDim, fontSize: 11, marginTop: 4 },
 
   /* FORGE */
+  forgeCount: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi,
+    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 14,
+  },
+  forgeCountText: { color: C.text, fontWeight: "900", fontSize: 12, letterSpacing: 1 },
+  forgeCountSub: { color: C.textDim, fontSize: 11 },
+  clearBtnText: { color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
+  equipmentSection: {
+    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    borderRadius: 12, padding: 14, marginBottom: 14,
+  },
+  equipmentHeader: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10,
+  },
+  equipmentTitle: { color: C.text, fontWeight: "900", fontSize: 12, letterSpacing: 2 },
+  equipmentCount: { color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
+  equipmentChip: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999,
+  },
+  equipmentChipActive: { backgroundColor: C.science, borderColor: C.science },
+  equipmentChipText: { color: C.textDim, fontSize: 10, fontWeight: "900", letterSpacing: 1 },
+  equipmentSummary: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 8 },
+  equipmentTag: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: C.bg2, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4,
+  },
+  equipmentTagText: { color: C.textDim, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
+  workoutCardLocked: { opacity: 0.45 },
+  altBox: {
+    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    borderRadius: 8, padding: 10, marginTop: 8, marginLeft: 38,
+  },
+  altKicker: { color: C.optimal, fontSize: 9, fontWeight: "900", letterSpacing: 2, marginBottom: 6 },
+  altRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingVertical: 6, borderBottomWidth: 1, borderColor: C.border,
+  },
+  altName: { color: C.text, fontSize: 12, flex: 1 },
+  altVideoBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, backgroundColor: C.card,
+  },
+  altVideoText: { color: C.textDim, fontSize: 10, fontWeight: "900" },
+  sourceBadge: {
+    backgroundColor: "rgba(245,180,0,0.1)",
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+  },
+  sourceBadgeText: { color: C.gold, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   filterRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   filterChip: {
     backgroundColor: C.card, borderWidth: 1, borderColor: C.border,

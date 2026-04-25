@@ -1,0 +1,53 @@
+{
+  "summary": "PrimalForge Phase B FORGE polish — frontend-only Playwright testing on mobile viewport (390x844). All Phase B features verified: 30 workouts, focus filters (METCON=8, STRENGTH=5, FATBURN=5), time filter (≤15 MIN=14), combined METCON+≤15=5, count badge 'X of 30 workouts', CLEAR ALL chip, MY KIT equipment selector with 17 chips, AsyncStorage persistence (pf_equipment_v4), MATCHES MY KIT filter (shows 12 bodyweight-doable workouts when no kit selected), source badges (CrossFit.com / Hyrox · Official Race / Marcus Filly · Functional Bodybuilding / Ben Greenfield / Wendler / Tabata 1996 / Norwegian 4×4 / Andrew Weil), equipment chips on workout cards, workout detail shows source + WHY IT WORKS science note + citation, exercises show equipment chips + WATCH FORM, alt-toggle correctly shows 'MISSING KIT · ALTERNATIVES' yellow badge when user lacks kit and 'N ALTS' when kit is owned, alt-video-i-j buttons render after expand, MARK COMPLETE awards +100 XP. No regressions in HUD/FUEL/SCAN/VAULT.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "various", "issue": "Carry-over console warnings (non-blocking): 'shadow* style props are deprecated. Use boxShadow' and 'props.pointerEvents is deprecated' from react-native-web internals. Cosmetic only — same as iteration_3."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_4.json"],
+  "verified_flows": [
+    "FORGE loads with 30 workout cards and count badge '30 of 30 workouts' (no CLEAR ALL when no filter active)",
+    "filter-focus-metcon → 8 workouts (cindy, fran, helen, grace, diane, karen, angie, murph-light) — count badge updates to '8 of 30 workouts | CLEAR ALL'",
+    "filter-focus-strength → 5 workouts (back-squat-5x5, deadlift-531, press-day, pull-day, filly-persist)",
+    "filter-focus-fatburn → 5 workouts (tabata-torch, post-meal-walk, 20-emom, vo2-intervals, zone2-greenfield)",
+    "clear-filters tap resets to 30 of 30",
+    "filter-time-15 (≤15 MIN) → 14 workouts (spec said ~12-13; actual matching set is 14: tabata-torch 4, grace 6, diane 7, fran 8, 478-breath 8, tspine-opener 8, helen 12, hip-flexor-reclaim 12, post-meal-walk 10, karen 10, shoulder-prehab 10, farmers-march 10, para-reset 10, atg-basics 15)",
+    "Combined METCON + ≤15 MIN → 5 workouts (fran, grace, diane, karen, helen) — spec said ~6 but actual count is 5 because cindy=20, angie=25, murph=35 don't qualify",
+    "equipment-toggle expands MY KIT panel to exactly 17 equipment chips (eq-bodyweight ... eq-ice)",
+    "Multi-select chips toggle visually and persist to localStorage key 'pf_equipment_v4' as JSON string array — verified after page.reload(): [\"bodyweight\",\"dumbbell\",\"kettlebell\",\"pullup\"] persisted",
+    "my-kit-toggle (MATCHES MY KIT) with NO equipment selected → shows 12 bodyweight-only doable workouts (count badge confirmed '12 of 30 workouts' in screenshot)",
+    "Workout cards show source-badge text inside card ('Hyrox · Official Race' on hyrox-full-sim, 'Marcus Filly · Functional Bodybuilding' on filly-persist, 'CrossFit.com' on cindy etc.)",
+    "Workout cards show equipment-tag chips at the bottom (e.g. hyrox-full-sim shows Ski Erg, Sled, Rower, Dumbbells, Sandbag, Wall Ball)",
+    "Tap workout-cindy → workout-detail modal shows: focus badge METCON, time 20 MIN, source 'CrossFit.com', title CINDY, description, WHY IT WORKS science block + citation",
+    "Each exercise card shows equipment chip + WATCH FORM (video-i)",
+    "alt-toggle-0 on Pull-up renders as yellow 'MISSING KIT · ALTERNATIVES' badge when user has no Pull-up Bar selected — matches spec",
+    "Tapping alt-toggle expands panel showing each alternative name + alt-video-i-j WATCH button (3 alts present for pull-up: Ring Row, DB Bent-Over Row, Banded Lat Pulldown)",
+    "log-workout-btn fires +100 XP toast, vault-xp increments after returning to VAULT tab",
+    "All previous flows still working: HUD daily intel, water tracker, weight modal, header chips, FUEL meal log, SCAN placeholder, VAULT XP/credits/perks/bank/archive — confirmed visually intact during navigation"
+  ],
+  "action_items": [
+    "OPTIONAL: Spec stated '≤ 15 MIN should leave only short workouts (~12-13 of them)' but actual count is 14 — caused by atg-basics being exactly 15 min and the filter being ≤15 (inclusive). Either acceptable or tighten to <15. No code change needed unless main agent wants to match the spec wording exactly.",
+    "OPTIONAL: Spec stated 'METCON + ≤ 15 MIN should show ~6 workouts' but actual is 5 (fran 8, grace 6, diane 7, karen 10, helen 12). Spec was an estimate; result is correct given the data. No action needed.",
+    "OPTIONAL: my-kit-toggle state itself is not persisted across reloads (only the equipment selection is). If main agent wants the toggle to also persist, store a separate boolean. Current behavior matches PRD which only mentions persisting the kit array."
+  ],
+  "critical_code_review_comments": [
+    "canPerform() helper (data.ts) correctly checks each exercise: (a) all required eq present in `available` ∪ {bodyweight}, OR (b) any alternative covers all missing eq. Proper short-circuit logic.",
+    "workoutRequiredEquipment() correctly de-dupes via Set and excludes bodyweight from the equipment-chip display on cards.",
+    "AsyncStorage key versioning bumped to v4 for equipment (pf_equipment_v4) — clean breaking change with no migration logic needed since equipment is a new feature.",
+    "Source-badge rendering uses optional chaining (`workout.source && ...`) — no crash for workouts without source (e.g. helen has no source field set, but still renders correctly without badge).",
+    "alt-toggle button conditionally renders 'MISSING KIT · ALTERNATIVES' (yellow) vs 'N ALTS' based on canPerform() at exercise level — well-designed UX hint.",
+    "index.tsx is now ~1700+ lines with FORGE/equipment additions — exceeds 700-line guideline. Splitting into screens/* (HUD.tsx, FORGE.tsx, FUEL.tsx, VAULT.tsx) would help maintainability but is non-blocking for Phase B."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only per request)", "frontend": "100%"},
+  "seed_data_creation": "None — AsyncStorage-only client app; localStorage.clear() then full onboarding for each test run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile viewport 390x844. AsyncStorage v4 keys: pf_equipment_v4 (Equipment[] JSON array). Phase B FORGE testIDs: equipment-section, equipment-toggle, eq-{equipmentId}, my-kit-toggle, forge-count, clear-filters, alt-toggle-{i}, alt-video-{i}-{ai}. Workouts: 30 total. Focus filter counts: ALL=30, FATBURN=5, PERFORMANCE=5, STRENGTH=5, METCON=8, MOBILITY=4, RECOVERY=3. Time filter ≤15 MIN includes 14 workouts (atg-basics is 15 min and matches inclusive filter). Equipment chips total 17. Note: MATCHES MY KIT toggle state itself is NOT persisted (only the equipment array is). Cindy detail's first exercise (Pull-up) is the cleanest test case for alt-toggle MISSING KIT yellow badge when no kit is selected.",
+  "rca_of_issue": "No bugs found this iteration. Phase B FORGE polish ships clean."
+}
