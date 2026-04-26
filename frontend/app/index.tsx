@@ -43,6 +43,7 @@ import { FuelView } from "../src/screens/FuelView";
 import { ForgeView } from "../src/screens/ForgeView";
 import { ScanView } from "../src/screens/ScanView";
 import { VaultView } from "../src/screens/VaultView";
+import { TrendsView } from "../src/screens/TrendsView";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
@@ -377,6 +378,9 @@ export default function Index() {
               onSave={async (entry) => saveScanHistory([entry, ...scanHistory].slice(0, 25))}
               onClear={async () => saveScanHistory([])}
             />
+          )}
+          {tab === "trends" && (
+            <TrendsView log={log} profile={profile} />
           )}
           {tab === "vault" && (
             <VaultView

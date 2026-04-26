@@ -7,11 +7,12 @@ import type { Tab } from "../types";
 
 export function TabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { id: "hud", label: "HUD", icon: "pulse" },
-    { id: "fuel", label: "FUEL", icon: "flame" },
-    { id: "forge", label: "FORGE", icon: "fitness" },
-    { id: "scan", label: "SCAN", icon: "scan-outline" },
-    { id: "vault", label: "VAULT", icon: "trophy" },
+    { id: "hud",    label: "HUD",    icon: "pulse" },
+    { id: "fuel",   label: "FUEL",   icon: "flame" },
+    { id: "forge",  label: "FORGE",  icon: "fitness" },
+    { id: "scan",   label: "SCAN",   icon: "scan-outline" },
+    { id: "vault",  label: "VAULT",  icon: "trophy" },
+    { id: "trends", label: "TRENDS", icon: "analytics-outline" },
   ];
   return (
     <View style={styles.tabBar}>
