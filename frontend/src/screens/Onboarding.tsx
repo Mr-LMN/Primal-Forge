@@ -16,6 +16,8 @@ import {
   ACTIVITY_TIERS,
   GOALS,
   VISUAL_BF,
+  DIET_OPTIONS,
+  ALLERGEN_OPTIONS,
   navyBF,
   round,
   type Sex,
@@ -58,6 +60,8 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
   const [hip, setHip] = useState("");
   const [visualBf, setVisualBf] = useState<number | null>(null);
   const [tier, setTier] = useState<ActivityTier | null>(null);
+  const [dietPrefs, setDietPrefs] = useState<string[]>([]);
+  const [allergens, setAllergens] = useState<string[]>([]);
 
   const computedBF = useMemo(() => {
     if (bfMode === "manual") return parseFloat(bfManual);
@@ -76,11 +80,29 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
   const step2Valid = sex !== null && parseFloat(weight) > 0 && parseFloat(height) > 0;
   const step3Valid = !isNaN(computedBF) && computedBF >= 3 && computedBF < 60;
   const step4Valid = tier !== null;
-  const allValid = step1Valid && step2Valid && step3Valid && step4Valid;
+  const step5Valid = dietPrefs.length > 0;
+  const allValid = step1Valid && step2Valid && step3Valid && step4Valid && step5Valid;
+
+  const toggleDiet = (id: string) => {
+    haptic("light");
+    if (id === "no-preference") { setDietPrefs(["no-preference"]); return; }
+    setDietPrefs((prev) => {
+      const without = prev.filter((p) => p !== "no-preference");
+      return without.includes(id) ? without.filter((p) => p !== id) : [...without, id];
+    });
+  };
+  const toggleAllergen = (id: string) => {
+    haptic("light");
+    if (id === "none") { setAllergens(["none"]); return; }
+    setAllergens((prev) => {
+      const without = prev.filter((a) => a !== "none");
+      return without.includes(id) ? without.filter((a) => a !== id) : [...without, id];
+    });
+  };
 
   const preview = useMemo(() => {
     if (!allValid || !goal || !sex || !tier) return null;
-    return buildProfile({
+    const p = buildProfile({
       sex,
       weight: parseFloat(weight),
       height: parseFloat(height),
@@ -89,7 +111,10 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
       goal,
       tier,
     });
-  }, [allValid, goal, sex, weight, height, computedBF, bfMode, tier]);
+    p.dietPreferences = dietPrefs;
+    p.allergens = allergens.filter((a) => a !== "none");
+    return p;
+  }, [allValid, goal, sex, weight, height, computedBF, bfMode, tier, dietPrefs, allergens]);
 
   const submit = () => {
     if (preview) {
@@ -102,6 +127,7 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
     if (step === 1 && step1Valid) setStep(2);
     else if (step === 2 && step2Valid) setStep(3);
     else if (step === 3 && step3Valid) setStep(4);
+    else if (step === 4 && step4Valid) setStep(5);
   };
 
   return (
@@ -113,10 +139,10 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
       >
         <ScrollView contentContainerStyle={styles.onboardScroll} keyboardShouldPersistTaps="handled">
           <View style={styles.onboardHero}>
-            <Text style={styles.onboardKicker}>STEP {step} / 4</Text>
+            <Text style={styles.onboardKicker}>STEP {step} / 5</Text>
             <Text style={styles.brand}>PRIMALFORGE</Text>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+              <View style={[styles.progressFill, { width: `${(step / 5) * 100}%` }]} />
             </View>
           </View>
 
@@ -396,6 +422,45 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
             </View>
           )}
 
+          {step === 5 && (
+            <View>
+              <Text style={styles.stepTitle}>DIETARY PROFILE</Text>
+              <Text style={styles.stepSub}>Help ANVIL and recipes fit your lifestyle.</Text>
+              <Text style={styles.label}>DIET PREFERENCE</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {DIET_OPTIONS.map((d) => {
+                  const active = dietPrefs.includes(d.id);
+                  return (
+                    <TouchableOpacity
+                      key={d.id}
+                      testID={`diet-${d.id}`}
+                      onPress={() => toggleDiet(d.id)}
+                      style={[styles.filterChip, active && styles.filterChipActive]}
+                    >
+                      <Text style={[styles.filterChipText, active && { color: C.bg }]}>{d.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.label}>ALLERGENS (AVOID)</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {ALLERGEN_OPTIONS.map((a) => {
+                  const active = allergens.includes(a.id);
+                  return (
+                    <TouchableOpacity
+                      key={a.id}
+                      testID={`allergen-${a.id}`}
+                      onPress={() => toggleAllergen(a.id)}
+                      style={[styles.filterChip, active && { backgroundColor: C.penalty, borderColor: C.penalty }]}
+                    >
+                      <Text style={[styles.filterChipText, active && { color: "#fff" }]}>{a.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
           <View style={styles.navRow}>
             {step > 1 && (
               <TouchableOpacity
@@ -410,13 +475,14 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
                 <Text style={styles.secondaryBtnText}>BACK</Text>
               </TouchableOpacity>
             )}
-            {step < 4 ? (
+            {step < 5 ? (
               <TouchableOpacity
                 testID="onboard-next-btn"
                 disabled={
                   (step === 1 && !step1Valid) ||
                   (step === 2 && !step2Valid) ||
-                  (step === 3 && !step3Valid)
+                  (step === 3 && !step3Valid) ||
+                  (step === 4 && !step4Valid)
                 }
                 onPress={next}
                 style={[
@@ -424,7 +490,8 @@ export function Onboarding({ onComplete }: { onComplete: (p: Profile) => void })
                   { flex: 1 },
                   ((step === 1 && !step1Valid) ||
                     (step === 2 && !step2Valid) ||
-                    (step === 3 && !step3Valid)) &&
+                    (step === 3 && !step3Valid) ||
+                    (step === 4 && !step4Valid)) &&
                     styles.primaryBtnDisabled,
                 ]}
               >

@@ -52,8 +52,14 @@ function buildSystemPrompt(ctx: CoachContext): string {
   const { profile: p, totals: t, remaining: r, equipment: eq, recentWorkouts: rw } = ctx;
   const eqList = eq.length > 0 ? eq.join(", ") : "bodyweight only";
   const recentList = rw.slice(0, 5).map((w) => `${w.name} (${w.date})`).join(", ") || "none";
+  const dietLine = p.dietPreferences?.length
+    ? `DIETARY PREFERENCES: ${p.dietPreferences.join(", ")}`
+    : "DIETARY PREFERENCES: none specified";
+  const allergenLine = p.allergens?.length
+    ? `ALLERGENS (MUST AVOID): ${p.allergens.join(", ")}`
+    : "ALLERGENS: none";
 
-  return `You are the PrimalForge AI Coach — a senior sports scientist and nutrition advisor.
+  return `You are the PrimalForge AI Coach named ANVIL — a senior sports scientist and nutrition advisor.
 You speak in direct, evidence-based language. No fluff. No disclaimers. No "I'm just an AI" caveats.
 British English spelling. Metric units (kg, cm, g, kcal).
 
@@ -70,6 +76,8 @@ TODAY'S INTAKE:
 
 AVAILABLE EQUIPMENT: ${eqList}
 RECENT WORKOUTS: ${recentList}
+${dietLine}
+${allergenLine}
 
 RULES:
 - Cite peer-reviewed sources when making claims about training or nutrition.

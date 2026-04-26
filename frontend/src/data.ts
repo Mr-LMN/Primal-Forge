@@ -41,6 +41,25 @@ export const STORAGE = {
   dietPreferences: "pf_diet_prefs_v1",
 };
 
+/* ---------- Dietary preferences & allergens ---------- */
+export const DIET_OPTIONS: { id: string; label: string }[] = [
+  { id: "carnivore", label: "Carnivore" },
+  { id: "animal-based", label: "Animal-Based" },
+  { id: "keto", label: "Keto / Low-Carb" },
+  { id: "paleo", label: "Paleo" },
+  { id: "no-preference", label: "No Preference" },
+];
+
+export const ALLERGEN_OPTIONS: { id: string; label: string }[] = [
+  { id: "gluten", label: "Gluten" },
+  { id: "dairy", label: "Dairy" },
+  { id: "eggs", label: "Eggs" },
+  { id: "shellfish", label: "Shellfish" },
+  { id: "nuts", label: "Tree Nuts" },
+  { id: "soy", label: "Soy" },
+  { id: "none", label: "No Allergens" },
+];
+
 /* ---------- Profile types ---------- */
 export type Sex = "m" | "f";
 export type Goal = "fatloss" | "muscle" | "maintain" | "athlete";

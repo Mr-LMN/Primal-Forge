@@ -44,6 +44,7 @@ import { ForgeView } from "../src/screens/ForgeView";
 import { ScanView } from "../src/screens/ScanView";
 import { VaultView } from "../src/screens/VaultView";
 import { TrendsView } from "../src/screens/TrendsView";
+import { CoachView } from "../src/screens/CoachView";
 
 export default function Index() {
   const [loaded, setLoaded] = useState(false);
@@ -63,6 +64,7 @@ export default function Index() {
   const [tab, setTab] = useState<Tab>("hud");
   const [weightModal, setWeightModal] = useState(false);
   const [intelModal, setIntelModal] = useState(false);
+  const [coachVisible, setCoachVisible] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
 
@@ -425,6 +427,43 @@ export default function Index() {
           }}
         />
       </View>
+
+      {/* ANVIL FAB */}
+      <TouchableOpacity
+        testID="anvil-fab"
+        onPress={() => { haptic("medium"); setCoachVisible(true); }}
+        style={{
+          position: "absolute", bottom: 80, right: 16,
+          width: 52, height: 52, borderRadius: 26,
+          backgroundColor: C.fire, justifyContent: "center", alignItems: "center",
+          shadowColor: C.fire, shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+        }}
+        activeOpacity={0.8}
+      >
+        <Text style={{ fontSize: 22 }}>⚒</Text>
+      </TouchableOpacity>
+
+      {/* ANVIL Coach Modal */}
+      <Modal visible={coachVisible} animationType="slide" onRequestClose={() => setCoachVisible(false)}>
+        <SafeAreaView style={[styles.root, { flex: 1 }]} edges={["top", "bottom"]}>
+          <CoachView
+            profile={profile}
+            totals={totals}
+            remaining={{
+              kcal: Math.max(0, profile.calories - totals.kcal),
+              p: Math.max(0, profile.protein - totals.p),
+              f: Math.max(0, profile.fat - totals.f),
+              c: Math.max(0, profile.carbs - totals.c),
+            }}
+            equipment={equipment}
+            recentWorkouts={workoutsLogged.slice(0, 10)}
+            loggedMealsToday={today.length > 0}
+            loggedWorkoutToday={workoutsLogged.some((w) => w.date === todayKey())}
+            onClose={() => setCoachVisible(false)}
+          />
+        </SafeAreaView>
+      </Modal>
 
       {toast && (
         <Animated.View style={[styles.xpToast, { opacity: toastOpacity }]} pointerEvents="none">

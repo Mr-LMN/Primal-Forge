@@ -16,6 +16,8 @@ export type Profile = {
   carbs: number;
   fat: number;
   createdAt: string;
+  dietPreferences?: string[];   // e.g. ["dairy-free","carnivore"]
+  allergens?: string[];         // e.g. ["gluten","shellfish"]
 };
 
 export type LogEntry = {
