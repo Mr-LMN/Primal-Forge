@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
   Platform,
   KeyboardAvoidingView,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import {
   C,
@@ -92,6 +94,13 @@ export function FuelView({
   const [unit, setUnit] = useState<Unit>({ id: "g", label: "g", g: 1 });
   const [amount, setAmount] = useState("");
   const [search, setSearch] = useState("");
+
+  // Barcode scanner state
+  const [barcodeVisible, setBarcodeVisible] = useState(false);
+  const [barcodeStatus, setBarcodeStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [barcodeMsg, setBarcodeMsg] = useState("");
+  const [camPermission, requestCamPermission] = useCameraPermissions();
+  const barcodeHandled = useRef(false);
 
   // Recipes state
   const [mealFilter, setMealFilter] = useState<RecipeMeal | "all">("all");
@@ -282,6 +291,61 @@ export function FuelView({
     resetForm();
   };
 
+  const openBarcodeScanner = async () => {
+    haptic();
+    if (!camPermission?.granted) {
+      const res = await requestCamPermission();
+      if (!res.granted) {
+        setBarcodeMsg("Camera permission denied.");
+        setBarcodeStatus("error");
+        setBarcodeVisible(true);
+        return;
+      }
+    }
+    barcodeHandled.current = false;
+    setBarcodeStatus("idle");
+    setBarcodeVisible(true);
+  };
+
+  const handleBarcode = async ({ data }: { data: string }) => {
+    if (barcodeHandled.current) return;
+    barcodeHandled.current = true;
+    setBarcodeStatus("loading");
+    haptic("medium");
+    try {
+      const res = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(data)}.json`
+      );
+      const json = await res.json();
+      if (json.status !== 1) throw new Error("not_found");
+      const prod = json.product;
+      const n = prod.nutriments ?? {};
+      const kcalPer100 =
+        n["energy-kcal_100g"] ??
+        (n["energy_100g"] != null ? Math.round(n["energy_100g"] / 4.184) : 0);
+      const food: Food = {
+        id: `barcode-${data}`,
+        name: prod.product_name_en || prod.product_name || "Scanned Product",
+        cat: "Scanned",
+        kcal: Math.round(kcalPer100),
+        p: Math.round((n.proteins_100g ?? 0) * 10) / 10,
+        f: Math.round((n.fat_100g ?? 0) * 10) / 10,
+        c: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
+      };
+      setSelected(food);
+      setUnit({ id: "g", label: "g", g: 1 });
+      setBarcodeVisible(false);
+      haptic("success");
+    } catch (err: any) {
+      setBarcodeMsg(
+        err?.message === "not_found"
+          ? "Product not found in database. Try a different barcode or enter manually."
+          : "Couldn't reach food database. Check your connection."
+      );
+      setBarcodeStatus("error");
+    }
+  };
+
   const preview = useMemo(() => {
     const n = parseFloat(amount);
     if (!selected || !n || n <= 0) return null;
@@ -332,6 +396,15 @@ export function FuelView({
                 </ScrollView>
               </View>
             )}
+
+            <TouchableOpacity
+              testID="barcode-scan-btn"
+              onPress={openBarcodeScanner}
+              style={[styles.secondaryBtn, { marginBottom: 8 }]}
+            >
+              <Ionicons name="barcode-outline" size={14} color={C.text} />
+              <Text style={styles.secondaryBtnText}>SCAN BARCODE</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity testID="open-food-picker" onPress={() => { haptic(); setPicker(true); }} style={styles.foodPickerBtn}>
               <View style={{ flex: 1 }}>
@@ -1037,6 +1110,107 @@ export function FuelView({
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ============ BARCODE SCANNER MODAL ============ */}
+      <Modal
+        visible={barcodeVisible}
+        animationType="slide"
+        onRequestClose={() => setBarcodeVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+          {barcodeStatus === "loading" && (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 16 }}>
+              <ActivityIndicator color={C.gold} size="large" />
+              <Text style={{ color: C.textDim, fontSize: 13, fontWeight: "700" }}>
+                Looking up product…
+              </Text>
+            </View>
+          )}
+
+          {barcodeStatus === "error" && (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 28 }}>
+              <Ionicons name="warning-outline" size={36} color={C.warning} />
+              <Text
+                style={{
+                  color: C.text,
+                  fontSize: 14,
+                  textAlign: "center",
+                  marginTop: 16,
+                  marginBottom: 28,
+                  lineHeight: 22,
+                }}
+              >
+                {barcodeMsg}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  barcodeHandled.current = false;
+                  setBarcodeStatus("idle");
+                }}
+                style={[styles.primaryBtn, { width: "100%" }]}
+              >
+                <Text style={styles.primaryBtnText}>TRY AGAIN</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setBarcodeVisible(false)}
+                style={[styles.secondaryBtn, { width: "100%", marginTop: 10 }]}
+              >
+                <Text style={styles.secondaryBtnText}>CANCEL</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {barcodeStatus === "idle" && (
+            <CameraView
+              style={{ flex: 1 }}
+              facing="back"
+              barcodeScannerSettings={{
+                barcodeTypes: ["ean8", "ean13", "upc_a", "upc_e"],
+              }}
+              onBarcodeScanned={handleBarcode}
+            >
+              <View style={{ flex: 1, justifyContent: "flex-end" }}>
+                <View
+                  style={{
+                    backgroundColor: "rgba(0,0,0,0.75)",
+                    padding: 20,
+                    gap: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: C.text,
+                      fontWeight: "900",
+                      fontSize: 13,
+                      letterSpacing: 2,
+                      textAlign: "center",
+                    }}
+                  >
+                    SCAN FOOD BARCODE
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.textDim,
+                      fontSize: 12,
+                      textAlign: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Point at any EAN / UPC barcode · Open Food Facts database
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setBarcodeVisible(false)}
+                    style={styles.secondaryBtn}
+                  >
+                    <Ionicons name="close" size={14} color={C.text} />
+                    <Text style={styles.secondaryBtnText}>CANCEL</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </CameraView>
+          )}
         </SafeAreaView>
       </Modal>
     </KeyboardAvoidingView>
