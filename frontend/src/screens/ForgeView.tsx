@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -18,6 +18,12 @@ import { styles } from "../styles";
 import { haptic, openYouTube } from "../utils";
 import type { WorkoutLogged } from "../types";
 import { WorkoutSessionView } from "./WorkoutSessionView";
+import {
+  searchWgerExercises,
+  getWgerExerciseDetail,
+  type WgerSuggestion,
+  type WgerExerciseDetail,
+} from "../api";
 
 export function ForgeView({
   equipment,
@@ -37,6 +43,16 @@ export function ForgeView({
   const [open, setOpen] = useState<Workout | null>(null);
   const [showAlt, setShowAlt] = useState<Record<number, boolean>>({});
   const [inSession, setInSession] = useState(false);
+
+  // Exercise lookup state
+  const [lookupVisible, setLookupVisible] = useState(false);
+  const [lookupQuery, setLookupQuery] = useState("");
+  const [lookupResults, setLookupResults] = useState<WgerSuggestion[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupDetailLoading, setLookupDetailLoading] = useState(false);
+  const [lookupDetail, setLookupDetail] = useState<WgerExerciseDetail | null>(null);
+  const [lookupError, setLookupError] = useState("");
+  const lookupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filtered = useMemo(() => {
     let list = [...WORKOUTS];
@@ -77,6 +93,53 @@ export function ForgeView({
   };
 
   const filtersActive = filter !== "all" || time !== "all" || myKitOnly;
+
+  const closeLookup = () => {
+    if (lookupDebounce.current) clearTimeout(lookupDebounce.current);
+    setLookupVisible(false);
+    setLookupQuery("");
+    setLookupResults([]);
+    setLookupDetail(null);
+    setLookupError("");
+  };
+
+  const handleLookupSearch = (text: string) => {
+    setLookupQuery(text);
+    setLookupDetail(null);
+    setLookupError("");
+    if (lookupDebounce.current) clearTimeout(lookupDebounce.current);
+    if (text.trim().length < 2) {
+      setLookupResults([]);
+      setLookupLoading(false);
+      return;
+    }
+    setLookupLoading(true);
+    lookupDebounce.current = setTimeout(async () => {
+      try {
+        const results = await searchWgerExercises(text.trim());
+        setLookupResults(results);
+      } catch {
+        setLookupError("Couldn't reach exercise database. Check your connection.");
+        setLookupResults([]);
+      } finally {
+        setLookupLoading(false);
+      }
+    }, 400);
+  };
+
+  const openLookupDetail = async (s: WgerSuggestion) => {
+    haptic();
+    setLookupDetailLoading(true);
+    setLookupError("");
+    try {
+      const detail = await getWgerExerciseDetail(s.data.base_id);
+      setLookupDetail(detail);
+    } catch {
+      setLookupError("Couldn't load exercise details. Try again.");
+    } finally {
+      setLookupDetailLoading(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -161,6 +224,23 @@ export function ForgeView({
             );
           })}
         </View>
+
+        <TouchableOpacity
+          testID="exercise-lookup-btn"
+          onPress={() => { haptic(); setLookupVisible(true); }}
+          style={{
+            flexDirection: "row", alignItems: "center", gap: 6,
+            alignSelf: "flex-start", marginBottom: 14,
+            backgroundColor: "rgba(14,165,233,0.1)",
+            borderWidth: 1, borderColor: C.science,
+            paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+          }}
+        >
+          <Ionicons name="search" size={13} color={C.science} />
+          <Text style={{ color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>
+            EXERCISE LOOKUP
+          </Text>
+        </TouchableOpacity>
 
         <View style={styles.forgeCount} testID="forge-count">
           <Text style={styles.forgeCountText}>{filtered.length} of {WORKOUTS.length} workouts</Text>
@@ -408,6 +488,172 @@ export function ForgeView({
             onBack={() => setInSession(false)}
           />
         )}
+      </Modal>
+
+      {/* Exercise Lookup — powered by Wger Workout Manager */}
+      <Modal visible={lookupVisible} animationType="slide" onRequestClose={closeLookup}>
+        <SafeAreaView style={[styles.root, { flex: 1 }]} edges={["top", "bottom"]}>
+          <View style={styles.shell}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.brand}>EXERCISE LOOKUP</Text>
+              <TouchableOpacity onPress={closeLookup} testID="close-lookup">
+                <Ionicons name="close" size={26} color={C.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.searchWrap, { marginHorizontal: 16, marginTop: 12 }]}>
+              <Ionicons name="search" size={16} color={C.textDim} />
+              <TextInput
+                testID="lookup-search-input"
+                value={lookupQuery}
+                onChangeText={handleLookupSearch}
+                placeholder="e.g. deadlift, squat, press…"
+                placeholderTextColor={C.textMute}
+                style={styles.searchInput}
+                autoFocus
+              />
+            </View>
+
+            {lookupDetailLoading ? (
+              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <ActivityIndicator color={C.text} size="large" />
+              </View>
+            ) : lookupDetail ? (
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} testID="lookup-detail">
+                <TouchableOpacity
+                  testID="lookup-back"
+                  onPress={() => { setLookupDetail(null); setLookupError(""); }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 16 }}
+                >
+                  <Ionicons name="arrow-back" size={16} color={C.textDim} />
+                  <Text style={{ color: C.textDim, fontSize: 12, fontWeight: "900", letterSpacing: 2 }}>
+                    BACK TO RESULTS
+                  </Text>
+                </TouchableOpacity>
+
+                {lookupDetail.category.length > 0 && (
+                  <Text style={styles.intelTag}>{lookupDetail.category.toUpperCase()}</Text>
+                )}
+                <Text style={[styles.detailTitle, { marginTop: 6, marginBottom: 14 }]}>
+                  {lookupDetail.name}
+                </Text>
+
+                {lookupDetail.muscles.length > 0 && (
+                  <View style={{ marginBottom: 14 }}>
+                    <Text style={[styles.subKicker, { marginBottom: 8 }]}>PRIMARY MUSCLES</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      {lookupDetail.muscles.map((m) => (
+                        <View
+                          key={m}
+                          style={{
+                            backgroundColor: "rgba(34,197,94,0.1)",
+                            borderWidth: 1, borderColor: C.optimal,
+                            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+                          }}
+                        >
+                          <Text style={{ color: C.optimal, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>
+                            {m}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {lookupDetail.musclesSecondary.length > 0 && (
+                  <View style={{ marginBottom: 14 }}>
+                    <Text style={[styles.subKicker, { marginBottom: 8 }]}>SECONDARY MUSCLES</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      {lookupDetail.musclesSecondary.map((m) => (
+                        <View
+                          key={m}
+                          style={{
+                            backgroundColor: C.card,
+                            borderWidth: 1, borderColor: C.border,
+                            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+                          }}
+                        >
+                          <Text style={{ color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>
+                            {m}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {lookupDetail.equipment.length > 0 && (
+                  <View style={{ marginBottom: 14 }}>
+                    <Text style={[styles.subKicker, { marginBottom: 8 }]}>EQUIPMENT</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      {lookupDetail.equipment.map((e) => (
+                        <View
+                          key={e}
+                          style={{
+                            backgroundColor: C.card,
+                            borderWidth: 1, borderColor: C.border,
+                            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+                          }}
+                        >
+                          <Text style={{ color: C.textDim, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>
+                            {e}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {lookupDetail.description.length > 0 && (
+                  <View style={styles.scienceBox}>
+                    <Text style={styles.scienceKicker}>DESCRIPTION</Text>
+                    <Text style={styles.scienceBody}>{lookupDetail.description}</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  testID="lookup-watch-form"
+                  onPress={() => { haptic(); openYouTube(`${lookupDetail.name} exercise tutorial form`); }}
+                  style={[styles.videoBtn, { marginTop: 16, alignSelf: "flex-start" }]}
+                >
+                  <Ionicons name="logo-youtube" size={14} color={C.penalty} />
+                  <Text style={styles.videoBtnText}>WATCH FORM</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            ) : (
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} testID="lookup-results">
+                {lookupLoading && (
+                  <ActivityIndicator color={C.text} style={{ marginTop: 24 }} />
+                )}
+                {!lookupLoading && lookupError !== "" && (
+                  <Text style={[styles.emptyText, { color: C.warning }]}>{lookupError}</Text>
+                )}
+                {!lookupLoading && lookupError === "" && lookupQuery.trim().length >= 2 && lookupResults.length === 0 && (
+                  <Text style={styles.emptyText}>No exercises found. Try a different term.</Text>
+                )}
+                {!lookupLoading && lookupQuery.trim().length < 2 && (
+                  <Text style={[styles.emptyText, { marginTop: 24 }]}>
+                    Start typing to search thousands of exercises.
+                  </Text>
+                )}
+                {lookupResults.map((s) => (
+                  <TouchableOpacity
+                    key={s.data.id}
+                    testID={`lookup-result-${s.data.id}`}
+                    onPress={() => openLookupDetail(s)}
+                    style={[styles.foodRow, { justifyContent: "space-between", alignItems: "center" }]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.foodRowName}>{s.data.name}</Text>
+                      <Text style={styles.foodRowCat}>{s.data.category}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={C.textDim} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );

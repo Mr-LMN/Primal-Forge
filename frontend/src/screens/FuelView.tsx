@@ -38,6 +38,7 @@ import {
   type PlannedMeal,
 } from "../utils";
 import type { LogEntry } from "../types";
+import { searchUsdaFoods, USDA_AVAILABLE } from "../api";
 
 type FuelMode = "foods" | "recipes";
 type RecipeSort = "default" | "fit";
@@ -94,6 +95,11 @@ export function FuelView({
   const [unit, setUnit] = useState<Unit>({ id: "g", label: "g", g: 1 });
   const [amount, setAmount] = useState("");
   const [search, setSearch] = useState("");
+
+  // Online food search state
+  const [onlineResults, setOnlineResults] = useState<Food[]>([]);
+  const [onlineLoading, setOnlineLoading] = useState(false);
+  const [onlineFetched, setOnlineFetched] = useState(false);
 
   // Barcode scanner state
   const [barcodeVisible, setBarcodeVisible] = useState(false);
@@ -168,12 +174,50 @@ export function FuelView({
     return [base, ...(selected?.units ?? [])];
   }, [selected]);
 
+  const closePicker = () => {
+    setPicker(false);
+    setSearch("");
+    setOnlineResults([]);
+    setOnlineFetched(false);
+  };
+
   const pickFood = (f: Food) => {
     haptic();
     setSelected(f);
     setUnit({ id: "g", label: "g", g: 1 });
-    setPicker(false);
-    setSearch("");
+    closePicker();
+  };
+
+  const handleSearchChange = (text: string) => {
+    setSearch(text);
+    setOnlineFetched(false);
+    setOnlineResults([]);
+  };
+
+  const doUsdaSearch = async () => {
+    if (!USDA_AVAILABLE || !search.trim()) return;
+    haptic("medium");
+    setOnlineFetched(true);
+    setOnlineLoading(true);
+    try {
+      const results = await searchUsdaFoods(search.trim());
+      const foods: Food[] = results.map((r) => ({
+        id: `usda-${r.fdcId}`,
+        name: r.description
+          .toLowerCase()
+          .replace(/\b\w/g, (c) => c.toUpperCase()),
+        cat: "USDA",
+        kcal: r.kcal,
+        p: r.protein,
+        f: r.fat,
+        c: r.carbs,
+      }));
+      setOnlineResults(foods);
+    } catch {
+      setOnlineResults([]);
+    } finally {
+      setOnlineLoading(false);
+    }
   };
 
   const submit = () => {
@@ -707,12 +751,12 @@ export function FuelView({
       </ScrollView>
 
       {/* FOOD PICKER MODAL */}
-      <Modal visible={picker} animationType="slide" onRequestClose={() => setPicker(false)}>
+      <Modal visible={picker} animationType="slide" onRequestClose={closePicker}>
         <SafeAreaView style={[styles.root, { flex: 1 }]} edges={["top", "bottom"]}>
           <View style={styles.shell}>
             <View style={styles.pickerHeader}>
               <Text style={styles.brand}>SELECT FOOD</Text>
-              <TouchableOpacity onPress={() => setPicker(false)} testID="close-food-picker">
+              <TouchableOpacity onPress={closePicker} testID="close-food-picker">
                 <Ionicons name="close" size={26} color={C.text} />
               </TouchableOpacity>
             </View>
@@ -721,7 +765,7 @@ export function FuelView({
               <TextInput
                 testID="food-search-input"
                 value={search}
-                onChangeText={setSearch}
+                onChangeText={handleSearchChange}
                 placeholder="ribeye, kippers, honey…"
                 placeholderTextColor={C.textMute}
                 style={styles.searchInput}
@@ -746,6 +790,49 @@ export function FuelView({
                 </Pressable>
               ))}
               {filtered.length === 0 && <Text style={styles.emptyText}>No match. Whole foods only.</Text>}
+
+              {/* Online food search via USDA FoodData Central */}
+              {search.trim().length > 1 && (
+                <View style={{ marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.border }}>
+                  <Text style={styles.subKicker}>SEARCH ONLINE</Text>
+                  {!USDA_AVAILABLE ? (
+                    <Text style={[styles.emptyText, { color: C.textMute }]}>
+                      Add your USDA API key to unlock online food search.
+                    </Text>
+                  ) : !onlineFetched ? (
+                    <TouchableOpacity
+                      testID="usda-search-btn"
+                      onPress={doUsdaSearch}
+                      style={[styles.filterChip, { alignSelf: "flex-start", flexDirection: "row", gap: 6, alignItems: "center" }]}
+                    >
+                      <Ionicons name="cloud-download-outline" size={13} color={C.textDim} />
+                      <Text style={styles.filterChipText}>SEARCH USDA DATABASE</Text>
+                    </TouchableOpacity>
+                  ) : onlineLoading ? (
+                    <ActivityIndicator color={C.text} style={{ marginTop: 12 }} />
+                  ) : onlineResults.length === 0 ? (
+                    <Text style={styles.emptyText}>No results found online.</Text>
+                  ) : (
+                    onlineResults.map((f) => (
+                      <Pressable
+                        key={f.id}
+                        testID={`usda-option-${f.id}`}
+                        onPress={() => pickFood(f)}
+                        style={({ pressed }) => [styles.foodRow, pressed && { backgroundColor: C.cardHi }]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.foodRowName}>{f.name}</Text>
+                          <Text style={[styles.foodRowCat, { color: C.science }]}>{f.cat}</Text>
+                        </View>
+                        <View style={styles.foodRowMeta}>
+                          <Text style={styles.foodRowKcal}>{f.kcal}</Text>
+                          <Text style={styles.foodRowMacros}>{f.p}P · {f.f}F · {f.c}C</Text>
+                        </View>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              )}
             </ScrollView>
           </View>
         </SafeAreaView>
