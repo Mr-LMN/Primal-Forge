@@ -66,6 +66,6 @@ export type ScanHistEntry = {
   ambers: number;
 };
 
-export type Tab = "hud" | "fuel" | "forge" | "scan" | "vault";
+export type Tab = "hud" | "fuel" | "forge" | "scan" | "vault" | "trends";
 
 export type Totals = { kcal: number; p: number; f: number; c: number };
