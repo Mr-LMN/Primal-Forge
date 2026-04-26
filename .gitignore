@@ -7,6 +7,10 @@
 # Dependencies
 node_modules/
 /node_modules
+frontend/.metro-cache/
+frontend/.expo/
+frontend/dist/
+frontend/node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
