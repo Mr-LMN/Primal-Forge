@@ -91,12 +91,14 @@ export async function searchUsdaFoods(query: string): Promise<UsdaFood[]> {
   if (!res.ok) throw new Error("USDA search failed");
   const json = await res.json();
   return (json.foods ?? []).map((f: any) => {
+    // Foundation/SR foods use 2047 (Atwater General) for kcal; branded foods use 1008
     const n = (id: number): number =>
       f.foodNutrients?.find((x: any) => x.nutrientId === id)?.value ?? 0;
+    const kcal = n(1008) || n(2047) || n(2048);
     return {
       fdcId: f.fdcId,
       description: f.description,
-      kcal: Math.round(n(1008)),
+      kcal: Math.round(kcal),
       protein: Math.round(n(1003) * 10) / 10,
       fat: Math.round(n(1004) * 10) / 10,
       carbs: Math.round(n(1005) * 10) / 10,
@@ -106,10 +108,8 @@ export async function searchUsdaFoods(query: string): Promise<UsdaFood[]> {
 
 // ─── Nutritionix ─────────────────────────────────────────────────────────────
 // Free tier: 500 food searches + 50 NLP exercise lookups per day.
+// Requires a business email to sign up — skipping for now.
 // Sign up: https://www.nutritionix.com/business/api
-// Add to frontend/.env.local:
-//   EXPO_PUBLIC_NUTRITIONIX_APP_ID=your_app_id
-//   EXPO_PUBLIC_NUTRITIONIX_APP_KEY=your_app_key
 export const NUTRITIONIX_AVAILABLE = !!(
   process.env.EXPO_PUBLIC_NUTRITIONIX_APP_ID &&
   process.env.EXPO_PUBLIC_NUTRITIONIX_APP_KEY
@@ -119,4 +119,32 @@ export const NUTRITIONIX_AVAILABLE = !!(
 // Free tier: 1,000 requests per day.
 // Sign up: https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb
 // Add to frontend/.env.local → EXPO_PUBLIC_EXERCISEDB_API_KEY=your_rapidapi_key
-export const EXERCISEDB_AVAILABLE = !!process.env.EXPO_PUBLIC_EXERCISEDB_API_KEY;
+
+const _EXERCISEDB_KEY = process.env.EXPO_PUBLIC_EXERCISEDB_API_KEY ?? "";
+export const EXERCISEDB_AVAILABLE = !!_EXERCISEDB_KEY;
+
+export type ExerciseDbEntry = {
+  id: string;
+  name: string;
+  bodyPart: string;
+  target: string;
+  equipment: string;
+  secondaryMuscles: string[];
+  instructions: string[];
+  description: string;
+  difficulty: "beginner" | "intermediate" | "advanced" | string;
+  category: string;
+};
+
+export async function searchExerciseDb(name: string): Promise<ExerciseDbEntry[]> {
+  if (!_EXERCISEDB_KEY) throw new Error("EXERCISEDB_KEY_MISSING");
+  const url = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(name.toLowerCase())}?limit=5&offset=0`;
+  const res = await fetch(url, {
+    headers: {
+      "x-rapidapi-host": "exercisedb.p.rapidapi.com",
+      "x-rapidapi-key": _EXERCISEDB_KEY,
+    },
+  });
+  if (!res.ok) throw new Error("ExerciseDB search failed");
+  return res.json();
+}

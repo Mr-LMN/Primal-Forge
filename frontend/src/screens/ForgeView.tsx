@@ -21,8 +21,11 @@ import { WorkoutSessionView } from "./WorkoutSessionView";
 import {
   searchWgerExercises,
   getWgerExerciseDetail,
+  searchExerciseDb,
+  EXERCISEDB_AVAILABLE,
   type WgerSuggestion,
   type WgerExerciseDetail,
+  type ExerciseDbEntry,
 } from "../api";
 
 export function ForgeView({
@@ -52,6 +55,7 @@ export function ForgeView({
   const [lookupDetailLoading, setLookupDetailLoading] = useState(false);
   const [lookupDetail, setLookupDetail] = useState<WgerExerciseDetail | null>(null);
   const [lookupError, setLookupError] = useState("");
+  const [lookupDbEntry, setLookupDbEntry] = useState<ExerciseDbEntry | null>(null);
   const lookupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filtered = useMemo(() => {
@@ -100,6 +104,7 @@ export function ForgeView({
     setLookupQuery("");
     setLookupResults([]);
     setLookupDetail(null);
+    setLookupDbEntry(null);
     setLookupError("");
   };
 
@@ -130,10 +135,17 @@ export function ForgeView({
   const openLookupDetail = async (s: WgerSuggestion) => {
     haptic();
     setLookupDetailLoading(true);
+    setLookupDbEntry(null);
     setLookupError("");
     try {
-      const detail = await getWgerExerciseDetail(s.data.base_id);
+      const [detail, dbResults] = await Promise.all([
+        getWgerExerciseDetail(s.data.base_id),
+        EXERCISEDB_AVAILABLE
+          ? searchExerciseDb(s.data.name).catch(() => [] as ExerciseDbEntry[])
+          : Promise.resolve([] as ExerciseDbEntry[]),
+      ]);
       setLookupDetail(detail);
+      if (dbResults.length > 0) setLookupDbEntry(dbResults[0]);
     } catch {
       setLookupError("Couldn't load exercise details. Try again.");
     } finally {
@@ -522,7 +534,7 @@ export function ForgeView({
               <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} testID="lookup-detail">
                 <TouchableOpacity
                   testID="lookup-back"
-                  onPress={() => { setLookupDetail(null); setLookupError(""); }}
+                  onPress={() => { setLookupDetail(null); setLookupDbEntry(null); setLookupError(""); }}
                   style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 16 }}
                 >
                   <Ionicons name="arrow-back" size={16} color={C.textDim} />
@@ -531,10 +543,23 @@ export function ForgeView({
                   </Text>
                 </TouchableOpacity>
 
-                {lookupDetail.category.length > 0 && (
-                  <Text style={styles.intelTag}>{lookupDetail.category.toUpperCase()}</Text>
-                )}
-                <Text style={[styles.detailTitle, { marginTop: 6, marginBottom: 14 }]}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                  {lookupDetail.category.length > 0 && (
+                    <Text style={styles.intelTag}>{lookupDetail.category.toUpperCase()}</Text>
+                  )}
+                  {lookupDbEntry?.difficulty && (() => {
+                    const d = lookupDbEntry.difficulty;
+                    const color = d === "beginner" ? C.optimal : d === "intermediate" ? C.warning : C.penalty;
+                    return (
+                      <View style={{ backgroundColor: `${color}22`, borderWidth: 1, borderColor: color, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                        <Text style={{ color, fontSize: 10, fontWeight: "900", letterSpacing: 2 }}>
+                          {d.toUpperCase()}
+                        </Text>
+                      </View>
+                    );
+                  })()}
+                </View>
+                <Text style={[styles.detailTitle, { marginTop: 4, marginBottom: 14 }]}>
                   {lookupDetail.name}
                 </Text>
 
@@ -542,7 +567,7 @@ export function ForgeView({
                   <View style={{ marginBottom: 14 }}>
                     <Text style={[styles.subKicker, { marginBottom: 8 }]}>PRIMARY MUSCLES</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                      {lookupDetail.muscles.map((m) => (
+                      {lookupDetail.muscles.map((m: string) => (
                         <View
                           key={m}
                           style={{
@@ -564,7 +589,7 @@ export function ForgeView({
                   <View style={{ marginBottom: 14 }}>
                     <Text style={[styles.subKicker, { marginBottom: 8 }]}>SECONDARY MUSCLES</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                      {lookupDetail.musclesSecondary.map((m) => (
+                      {lookupDetail.musclesSecondary.map((m: string) => (
                         <View
                           key={m}
                           style={{
@@ -586,7 +611,7 @@ export function ForgeView({
                   <View style={{ marginBottom: 14 }}>
                     <Text style={[styles.subKicker, { marginBottom: 8 }]}>EQUIPMENT</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                      {lookupDetail.equipment.map((e) => (
+                      {lookupDetail.equipment.map((e: string) => (
                         <View
                           key={e}
                           style={{
@@ -604,7 +629,21 @@ export function ForgeView({
                   </View>
                 )}
 
-                {lookupDetail.description.length > 0 && (
+                {lookupDbEntry && lookupDbEntry.instructions.length > 0 && (
+                  <View style={[styles.scienceBox, { marginBottom: 12 }]}>
+                    <Text style={styles.scienceKicker}>HOW TO PERFORM</Text>
+                    {lookupDbEntry.instructions.map((step: string, i: number) => (
+                      <View key={i} style={{ flexDirection: "row", gap: 10, marginBottom: 8 }}>
+                        <Text style={{ color: C.science, fontWeight: "900", fontSize: 12, width: 18 }}>
+                          {i + 1}.
+                        </Text>
+                        <Text style={[styles.scienceBody, { flex: 1, marginTop: 0 }]}>{step}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {!lookupDbEntry && lookupDetail.description.length > 0 && (
                   <View style={styles.scienceBox}>
                     <Text style={styles.scienceKicker}>DESCRIPTION</Text>
                     <Text style={styles.scienceBody}>{lookupDetail.description}</Text>
@@ -636,7 +675,7 @@ export function ForgeView({
                     Start typing to search thousands of exercises.
                   </Text>
                 )}
-                {lookupResults.map((s) => (
+                {lookupResults.map((s: WgerSuggestion) => (
                   <TouchableOpacity
                     key={s.data.id}
                     testID={`lookup-result-${s.data.id}`}
