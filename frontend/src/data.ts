@@ -36,6 +36,9 @@ export const STORAGE = {
   scanHistory: "pf_scan_history_v4",
   recipeFavourites: "pf_recipe_favourites_v1",
   customRecipes: "pf_user_recipes_v1",
+  coachHistory: "pf_coach_history_v1",
+  supplementLog: "pf_supplement_log_v1",
+  dietPreferences: "pf_diet_prefs_v1",
 };
 
 /* ---------- Profile types ---------- */

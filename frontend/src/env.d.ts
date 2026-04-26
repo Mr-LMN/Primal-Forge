@@ -7,6 +7,7 @@ declare const process: {
     EXPO_PUBLIC_NUTRITIONIX_APP_ID?: string;
     EXPO_PUBLIC_NUTRITIONIX_APP_KEY?: string;
     EXPO_PUBLIC_EXERCISEDB_API_KEY?: string;
+    EXPO_PUBLIC_GEMINI_API_KEY?: string;
     NODE_ENV: string;
   };
 };

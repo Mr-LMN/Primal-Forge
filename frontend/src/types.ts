@@ -69,3 +69,57 @@ export type ScanHistEntry = {
 export type Tab = "hud" | "fuel" | "forge" | "scan" | "vault" | "trends";
 
 export type Totals = { kcal: number; p: number; f: number; c: number };
+
+/* ---------- AI Coach types ---------- */
+export type CoachMessage = {
+  id: string;
+  role: "user" | "model";
+  text: string;
+  timestamp: string;
+};
+
+export type CoachMode = "chat" | "workout" | "meal" | "supplement";
+
+export type DietPreference = "carnivore" | "animal-based" | "keto" | "no-preference";
+
+export type SupplementVerdict = {
+  name: string;
+  verdict: "keep" | "bin" | "conditional";
+  score: number;
+  summary: string;
+  benefits: string[];
+  risks: string[];
+  evidence: { claim: string; source: string; strength: "strong" | "moderate" | "weak" }[];
+  dosage?: string;
+};
+
+export type SupplementLogEntry = {
+  id: string;
+  name: string;
+  verdict: "keep" | "bin" | "conditional";
+  score: number;
+  summary: string;
+  date: string;
+};
+
+export type GeneratedWorkout = {
+  name: string;
+  focus: string;
+  duration: number;
+  intensity: string;
+  warmup: string[];
+  exercises: { name: string; setsReps: string; cue?: string }[];
+  cooldown: string[];
+  scienceNote?: string;
+};
+
+export type MealSuggestion = {
+  name: string;
+  description: string;
+  kcal: number;
+  p: number;
+  f: number;
+  c: number;
+  ingredients: string[];
+  prepTime: number;
+};
