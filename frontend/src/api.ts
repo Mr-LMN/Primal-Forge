@@ -1,3 +1,56 @@
+// ─── Shared fetch helpers ────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  status: number;
+  source: string;
+  constructor(source: string, message: string, status = 0) {
+    super(`[${source}] ${message}`);
+    this.name = "ApiError";
+    this.source = source;
+    this.status = status;
+  }
+}
+
+const DEFAULT_TIMEOUT_MS = 8000;
+
+async function fetchJson<T>(
+  source: string,
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  // AbortSignal.timeout isn't on every Hermes/RN runtime; fall back to manual abort.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "PrimalForge/1.0 (+https://github.com/Mr-LMN/primal-forge)",
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      throw new ApiError(source, `Request timed out after ${timeoutMs}ms`, 0);
+    }
+    throw new ApiError(source, err?.message ?? "Network request failed", 0);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) {
+    throw new ApiError(source, `HTTP ${res.status} ${res.statusText}`, res.status);
+  }
+  try {
+    return (await res.json()) as T;
+  } catch (err: any) {
+    throw new ApiError(source, `Invalid JSON response: ${err?.message ?? "parse failed"}`, res.status);
+  }
+}
+
 // ─── Wger Workout Manager ───────────────────────────────────────────────────
 // Free, no API key required.
 // https://wger.de/api/v2/
@@ -5,8 +58,11 @@
 export type WgerSuggestion = {
   value: string;
   data: {
+    // Wger's response includes both `id` and (historically) `base_id`. The
+    // exerciseinfo endpoint expects the base id; on newer schema versions
+    // `base_id` may be absent and `id` carries the same value. Tolerate both.
     id: number;
-    base_id: number;
+    base_id?: number;
     name: string;
     category: string;
   };
@@ -22,25 +78,29 @@ export type WgerExerciseDetail = {
   equipment: string[];
 };
 
+export function wgerSuggestionId(s: WgerSuggestion): number {
+  return s.data.base_id ?? s.data.id;
+}
+
 export async function searchWgerExercises(term: string): Promise<WgerSuggestion[]> {
-  const url = `https://wger.de/api/v2/exercise/search/?term=${encodeURIComponent(term)}&language=english&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Exercise search unavailable");
-  const json = await res.json();
-  const suggestions = (json.suggestions ?? []) as WgerSuggestion[];
+  // language=2 is the numeric ID for English. The previous `language=english`
+  // value was silently ignored on some wger versions and could return empty
+  // results or 400s.
+  const url = `https://wger.de/api/v2/exercise/search/?term=${encodeURIComponent(term)}&language=2&format=json`;
+  const json = await fetchJson<{ suggestions?: WgerSuggestion[] }>("wger", url);
+  const suggestions = json.suggestions ?? [];
   const seen = new Set<number>();
   return suggestions.filter((s) => {
-    if (seen.has(s.data.base_id)) return false;
-    seen.add(s.data.base_id);
+    const id = wgerSuggestionId(s);
+    if (id == null || seen.has(id)) return false;
+    seen.add(id);
     return true;
   });
 }
 
 export async function getWgerExerciseDetail(baseId: number): Promise<WgerExerciseDetail> {
   const url = `https://wger.de/api/v2/exerciseinfo/${baseId}/?format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Exercise info unavailable");
-  const json = await res.json();
+  const json = await fetchJson<any>("wger", url);
   const en = (json.translations ?? []).find((t: any) => t.language?.short_name === "en");
   const fallback = json.translations?.[0];
   return {
@@ -137,14 +197,12 @@ export type ExerciseDbEntry = {
 };
 
 export async function searchExerciseDb(name: string): Promise<ExerciseDbEntry[]> {
-  if (!_EXERCISEDB_KEY) throw new Error("EXERCISEDB_KEY_MISSING");
+  if (!_EXERCISEDB_KEY) throw new ApiError("exercisedb", "API key not configured");
   const url = `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(name.toLowerCase())}?limit=5&offset=0`;
-  const res = await fetch(url, {
+  return fetchJson<ExerciseDbEntry[]>("exercisedb", url, {
     headers: {
       "x-rapidapi-host": "exercisedb.p.rapidapi.com",
       "x-rapidapi-key": _EXERCISEDB_KEY,
     },
   });
-  if (!res.ok) throw new Error("ExerciseDB search failed");
-  return res.json();
 }

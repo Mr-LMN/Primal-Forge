@@ -22,11 +22,30 @@ import {
   searchWgerExercises,
   getWgerExerciseDetail,
   searchExerciseDb,
+  wgerSuggestionId,
+  ApiError,
   EXERCISEDB_AVAILABLE,
   type WgerSuggestion,
   type WgerExerciseDetail,
   type ExerciseDbEntry,
 } from "../api";
+
+function exerciseLookupErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 0) {
+      return "Couldn't reach the exercise database. Check your connection and try again.";
+    }
+    if (err.status === 429) {
+      return "Exercise database is rate-limited. Wait a moment and try again.";
+    }
+    if (err.status >= 500) {
+      return "Exercise database is temporarily unavailable. Try again shortly.";
+    }
+    if (__DEV__) return `Lookup failed: ${err.message}`;
+    return "Couldn't load exercise data. Try a different term.";
+  }
+  return "Couldn't reach the exercise database. Check your connection and try again.";
+}
 
 export function ForgeView({
   equipment,
@@ -108,28 +127,42 @@ export function ForgeView({
     setLookupError("");
   };
 
+  const runLookupSearch = async (term: string) => {
+    setLookupLoading(true);
+    setLookupError("");
+    try {
+      const results = await searchWgerExercises(term);
+      setLookupResults(results);
+    } catch (err) {
+      console.warn("[exercise-lookup] search failed:", err);
+      setLookupError(exerciseLookupErrorMessage(err));
+      setLookupResults([]);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   const handleLookupSearch = (text: string) => {
     setLookupQuery(text);
     setLookupDetail(null);
     setLookupError("");
     if (lookupDebounce.current) clearTimeout(lookupDebounce.current);
-    if (text.trim().length < 2) {
+    const term = text.trim();
+    if (term.length < 2) {
       setLookupResults([]);
       setLookupLoading(false);
       return;
     }
-    setLookupLoading(true);
-    lookupDebounce.current = setTimeout(async () => {
-      try {
-        const results = await searchWgerExercises(text.trim());
-        setLookupResults(results);
-      } catch {
-        setLookupError("Couldn't reach exercise database. Check your connection.");
-        setLookupResults([]);
-      } finally {
-        setLookupLoading(false);
-      }
+    lookupDebounce.current = setTimeout(() => {
+      void runLookupSearch(term);
     }, 400);
+  };
+
+  const retryLookupSearch = () => {
+    const term = lookupQuery.trim();
+    if (term.length < 2) return;
+    haptic();
+    void runLookupSearch(term);
   };
 
   const openLookupDetail = async (s: WgerSuggestion) => {
@@ -138,16 +171,21 @@ export function ForgeView({
     setLookupDbEntry(null);
     setLookupError("");
     try {
+      const id = wgerSuggestionId(s);
       const [detail, dbResults] = await Promise.all([
-        getWgerExerciseDetail(s.data.base_id),
+        getWgerExerciseDetail(id),
         EXERCISEDB_AVAILABLE
-          ? searchExerciseDb(s.data.name).catch(() => [] as ExerciseDbEntry[])
+          ? searchExerciseDb(s.data.name).catch((err) => {
+              console.warn("[exercise-lookup] ExerciseDB enrich failed:", err);
+              return [] as ExerciseDbEntry[];
+            })
           : Promise.resolve([] as ExerciseDbEntry[]),
       ]);
       setLookupDetail(detail);
       if (dbResults.length > 0) setLookupDbEntry(dbResults[0]);
-    } catch {
-      setLookupError("Couldn't load exercise details. Try again.");
+    } catch (err) {
+      console.warn("[exercise-lookup] detail failed:", err);
+      setLookupError(exerciseLookupErrorMessage(err));
     } finally {
       setLookupDetailLoading(false);
     }
@@ -665,7 +703,28 @@ export function ForgeView({
                   <ActivityIndicator color={C.text} style={{ marginTop: 24 }} />
                 )}
                 {!lookupLoading && lookupError !== "" && (
-                  <Text style={[styles.emptyText, { color: C.warning }]}>{lookupError}</Text>
+                  <View style={{ alignItems: "center", marginTop: 24, gap: 12 }}>
+                    <Text style={[styles.emptyText, { color: C.warning, marginTop: 0 }]}>
+                      {lookupError}
+                    </Text>
+                    {lookupQuery.trim().length >= 2 && (
+                      <TouchableOpacity
+                        testID="lookup-retry"
+                        onPress={retryLookupSearch}
+                        style={{
+                          flexDirection: "row", alignItems: "center", gap: 6,
+                          borderWidth: 1, borderColor: C.science,
+                          backgroundColor: "rgba(14,165,233,0.1)",
+                          paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                        }}
+                      >
+                        <Ionicons name="refresh" size={13} color={C.science} />
+                        <Text style={{ color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>
+                          RETRY
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
                 {!lookupLoading && lookupError === "" && lookupQuery.trim().length >= 2 && lookupResults.length === 0 && (
                   <Text style={styles.emptyText}>No exercises found. Try a different term.</Text>
@@ -675,10 +734,12 @@ export function ForgeView({
                     Start typing to search thousands of exercises.
                   </Text>
                 )}
-                {lookupResults.map((s: WgerSuggestion) => (
+                {lookupResults.map((s: WgerSuggestion) => {
+                  const id = wgerSuggestionId(s);
+                  return (
                   <TouchableOpacity
-                    key={s.data.id}
-                    testID={`lookup-result-${s.data.id}`}
+                    key={id}
+                    testID={`lookup-result-${id}`}
                     onPress={() => openLookupDetail(s)}
                     style={[styles.foodRow, { justifyContent: "space-between", alignItems: "center" }]}
                   >
@@ -688,7 +749,8 @@ export function ForgeView({
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={C.textDim} />
                   </TouchableOpacity>
-                ))}
+                  );
+                })}
               </ScrollView>
             )}
           </View>
