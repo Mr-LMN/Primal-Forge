@@ -1538,6 +1538,19 @@ export const todayKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+// Returns today's date as DD/MM/YYYY for display (British format).
+export const todayDisplay = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
+// Converts a stored YYYY-MM-DD key to DD/MM/YYYY for display.
+export const formatDateDisplay = (isoDate: string): string => {
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+};
+
 export const yesterdayKey = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);

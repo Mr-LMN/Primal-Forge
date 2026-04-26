@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, TIPS, XP_RULES, todayKey, round } from "../data";
+import { C, TIPS, XP_RULES, todayKey, todayDisplay, formatDateDisplay, round } from "../data";
 import { styles } from "../styles";
 import { haptic } from "../utils";
 import type { Profile, Totals, WeightEntry } from "../types";
@@ -158,7 +158,7 @@ export function HUDView({
 
   return (
     <ScrollView contentContainerStyle={styles.scrollPad} testID="hud-view">
-      <Text style={styles.sectionKicker}>HUD · {todayKey()}</Text>
+      <Text style={styles.sectionKicker}>HUD · {todayDisplay()}</Text>
 
       <TouchableOpacity
         testID="daily-intel-card"
@@ -252,7 +252,7 @@ export function HUDView({
           <View style={{ flex: 1 }}>
             <Text style={styles.weightTrendLabel}>LATEST WEIGH-IN</Text>
             <Text style={styles.weightTrendValue}>{lastWeight.weight} kg</Text>
-            <Text style={styles.weightTrendDate}>{lastWeight.date}</Text>
+            <Text style={styles.weightTrendDate}>{formatDateDisplay(lastWeight.date)}</Text>
           </View>
           {weights.length >= 2 && (
             <View style={{ alignItems: "flex-end" }}>
