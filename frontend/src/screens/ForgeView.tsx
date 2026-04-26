@@ -17,6 +17,7 @@ import {
 import { styles } from "../styles";
 import { haptic, openYouTube } from "../utils";
 import type { WorkoutLogged } from "../types";
+import { WorkoutSessionView } from "./WorkoutSessionView";
 
 export function ForgeView({
   equipment,
@@ -35,6 +36,7 @@ export function ForgeView({
   const [eqExpanded, setEqExpanded] = useState(false);
   const [open, setOpen] = useState<Workout | null>(null);
   const [showAlt, setShowAlt] = useState<Record<number, boolean>>({});
+  const [inSession, setInSession] = useState(false);
 
   const filtered = useMemo(() => {
     let list = [...WORKOUTS];
@@ -352,13 +354,30 @@ export function ForgeView({
                   );
                 })}
 
+                {/* START WORKOUT — primary action */}
+                <TouchableOpacity
+                  testID="start-workout-btn"
+                  onPress={() => { haptic("medium"); setInSession(true); }}
+                  style={[styles.logWorkoutBtn, { backgroundColor: C.fire, marginTop: 14 }]}
+                >
+                  <Ionicons name="play-circle" size={20} color={C.bg} />
+                  <Text style={styles.logWorkoutBtnText}>START WORKOUT</Text>
+                </TouchableOpacity>
+
+                {/* MARK COMPLETE — quick log without session */}
                 <TouchableOpacity
                   testID="log-workout-btn"
                   onPress={() => { onLogWorkout(open); setOpen(null); }}
-                  style={styles.logWorkoutBtn}
+                  style={[styles.logWorkoutBtn, {
+                    backgroundColor: "transparent",
+                    borderWidth: 1, borderColor: C.border,
+                    marginTop: 8,
+                  }]}
                 >
-                  <Ionicons name="checkmark-circle" size={18} color={C.bg} />
-                  <Text style={styles.logWorkoutBtnText}>MARK COMPLETE · +{XP_RULES.workoutLogged} XP</Text>
+                  <Ionicons name="checkmark-circle" size={18} color={C.textDim} />
+                  <Text style={[styles.logWorkoutBtnText, { color: C.textDim }]}>
+                    MARK COMPLETE · +{XP_RULES.workoutLogged} XP
+                  </Text>
                 </TouchableOpacity>
 
                 {loggedToday.some((w) => w.id === open.id) && (
@@ -369,6 +388,25 @@ export function ForgeView({
               </ScrollView>
             </View>
           </SafeAreaView>
+        )}
+      </Modal>
+
+      {/* Active workout session */}
+      <Modal
+        visible={inSession && open !== null}
+        animationType="slide"
+        onRequestClose={() => setInSession(false)}
+      >
+        {open && (
+          <WorkoutSessionView
+            workout={open}
+            onFinish={() => {
+              onLogWorkout(open);
+              setInSession(false);
+              setOpen(null);
+            }}
+            onBack={() => setInSession(false)}
+          />
         )}
       </Modal>
     </View>
