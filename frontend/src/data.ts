@@ -187,6 +187,21 @@ export const FOODS: Food[] = [
   { id: "sweetpot", name: "Sweet Potato (baked)", cat: "Refeed Carb", kcal: 90, p: 2, f: 0.1, c: 21 },
   { id: "rice-white", name: "White Rice (boiled)", cat: "Refeed Carb", kcal: 130, p: 2.7, f: 0.3, c: 28 },
   { id: "maple", name: "Maple Syrup", cat: "Refeed Carb", kcal: 260, p: 0, f: 0.2, c: 67, units: [{ id: "tbsp", label: "tbsp", g: 20 }, { id: "tsp", label: "tsp", g: 7 }] },
+  /* Condiments & Cooking Oils */
+  { id: "oliveoil", name: "Extra Virgin Olive Oil", cat: "Condiments", kcal: 884, p: 0, f: 100, c: 0, units: [{ id: "tbsp", label: "tbsp", g: 14 }, { id: "tsp", label: "tsp", g: 4.5 }] },
+  { id: "coconutoil", name: "Coconut Oil", cat: "Condiments", kcal: 892, p: 0, f: 99, c: 0, units: [{ id: "tbsp", label: "tbsp", g: 14 }, { id: "tsp", label: "tsp", g: 4.5 }] },
+  { id: "mustard-eng", name: "English Mustard", cat: "Condiments", kcal: 185, p: 8, f: 11, c: 14, units: [{ id: "tsp", label: "tsp", g: 5 }] },
+  { id: "mustard-dijon", name: "Dijon Mustard", cat: "Condiments", kcal: 170, p: 7, f: 10, c: 14, units: [{ id: "tsp", label: "tsp", g: 5 }] },
+  { id: "hotsauce", name: "Hot Sauce / Tabasco", cat: "Condiments", kcal: 12, p: 0.5, f: 0.3, c: 1, units: [{ id: "tsp", label: "tsp", g: 5 }] },
+  { id: "acv", name: "Apple Cider Vinegar", cat: "Condiments", kcal: 3, p: 0, f: 0, c: 0.6, units: [{ id: "tbsp", label: "tbsp", g: 15 }, { id: "tsp", label: "tsp", g: 5 }] },
+  { id: "balsamicvinegar", name: "Balsamic Vinegar", cat: "Condiments", kcal: 88, p: 0.5, f: 0, c: 17, units: [{ id: "tbsp", label: "tbsp", g: 16 }] },
+  { id: "soysauce", name: "Soy Sauce", cat: "Condiments", kcal: 53, p: 8, f: 0.6, c: 5, units: [{ id: "tbsp", label: "tbsp", g: 16 }, { id: "tsp", label: "tsp", g: 5 }] },
+  { id: "coconutaminos", name: "Coconut Aminos", cat: "Condiments", kcal: 39, p: 0.6, f: 0, c: 9, units: [{ id: "tbsp", label: "tbsp", g: 16 }, { id: "tsp", label: "tsp", g: 5 }] },
+  { id: "worcestershire", name: "Worcestershire Sauce", cat: "Condiments", kcal: 78, p: 1, f: 0, c: 20, units: [{ id: "tsp", label: "tsp", g: 5 }] },
+  { id: "garlic-raw", name: "Garlic (raw)", cat: "Condiments", kcal: 149, p: 6.4, f: 0.5, c: 33, units: [{ id: "clove", label: "clove", g: 5 }] },
+  { id: "ginger-raw", name: "Fresh Ginger", cat: "Condiments", kcal: 80, p: 1.8, f: 0.8, c: 18, units: [{ id: "tsp", label: "tsp grated", g: 5 }] },
+  { id: "lemon-juice", name: "Fresh Lemon Juice", cat: "Condiments", kcal: 22, p: 0.4, f: 0.2, c: 7, units: [{ id: "tbsp", label: "tbsp", g: 15 }, { id: "tsp", label: "tsp", g: 5 }] },
+  { id: "salt", name: "Sea Salt", cat: "Condiments", kcal: 0, p: 0, f: 0, c: 0, units: [{ id: "tsp", label: "tsp", g: 6 }] },
 ];
 
 /* ---------- Recipes (curated, macro-fit) ---------- */

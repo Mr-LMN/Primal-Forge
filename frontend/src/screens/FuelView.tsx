@@ -299,6 +299,27 @@ export function FuelView({
     setScale(1);
   };
 
+  const handleSaveMealGroup = (entries: LogEntry[], mealName: FoodMeal) => {
+    if (entries.length === 0) return;
+    haptic();
+    const tot = entries.reduce(
+      (a, e) => ({ kcal: a.kcal + e.kcal, p: a.p + e.p, f: a.f + e.f, c: a.c + e.c }),
+      { kcal: 0, p: 0, f: 0, c: 0 }
+    );
+    const ingLines = entries.map((e) => `${e.name} — ${e.amount} ${e.unit}`).join("\n");
+    const mealMap: Record<FoodMeal, RecipeMeal> = {
+      BREAKFAST: "BREAKFAST", LUNCH: "LUNCH", DINNER: "DINNER", SNACKS: "SNACK",
+    };
+    resetForm();
+    setFormKcal(String(Math.round(tot.kcal)));
+    setFormP(String(Math.round(tot.p)));
+    setFormF(String(Math.round(tot.f)));
+    setFormC(String(Math.round(tot.c)));
+    setFormIngredients(ingLines);
+    setFormMeal(mealMap[mealName]);
+    setRecipeFormVisible(true);
+  };
+
   const generatePlan = () => {
     haptic("medium");
     const next = buildDayPlan(allRecipes, remaining);
@@ -472,23 +493,23 @@ export function FuelView({
             <TouchableOpacity
               testID="barcode-scan-btn"
               onPress={openBarcodeScanner}
-              style={[styles.secondaryBtn, { marginBottom: 8 }]}
+              style={[styles.secondaryBtn, { marginBottom: 8, paddingVertical: 10 }]}
             >
               <Ionicons name="barcode-outline" size={14} color={C.text} />
               <Text style={styles.secondaryBtnText}>SCAN BARCODE</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity testID="open-food-picker" onPress={() => { haptic(); setPicker(true); }} style={styles.foodPickerBtn}>
+            <TouchableOpacity testID="open-food-picker" onPress={() => { haptic(); setPicker(true); }} style={[styles.foodPickerBtn, { paddingVertical: 10, paddingHorizontal: 12, marginBottom: 10 }]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.foodPickerLabel}>FOOD</Text>
-                <Text style={styles.foodPickerValue}>{selected ? selected.name : "Tap to select…"}</Text>
+                <Text style={[styles.foodPickerValue, { fontSize: 14, marginTop: 3 }]}>{selected ? selected.name : "Tap to select…"}</Text>
                 {selected && (
                   <Text style={styles.foodPickerMeta}>
                     {selected.kcal} kcal · {selected.p}P / {selected.f}F / {selected.c}C per 100g
                   </Text>
                 )}
               </View>
-              <Ionicons name="chevron-down" size={20} color={C.textDim} />
+              <Ionicons name="chevron-down" size={18} color={C.textDim} />
             </TouchableOpacity>
 
             {selected && availableUnits.length > 1 && (
@@ -512,7 +533,7 @@ export function FuelView({
               </View>
             )}
 
-            <View style={styles.onboardField}>
+            <View style={[styles.onboardField, { marginBottom: 10 }]}>
               <Text style={styles.label}>{unit.id === "g" ? "GRAMS" : `AMOUNT · ${unit.label.toUpperCase()}`}</Text>
               <TextInput
                 testID="fuel-amount-input"
@@ -521,7 +542,7 @@ export function FuelView({
                 placeholder={unit.id === "g" ? "200" : "1"}
                 placeholderTextColor={C.textMute}
                 keyboardType="decimal-pad"
-                style={styles.input}
+                style={[styles.input, { fontSize: 16, paddingVertical: 10 }]}
               />
               {preview && (
                 <Text style={styles.previewInline} testID="fuel-preview">
@@ -552,7 +573,7 @@ export function FuelView({
               testID="fuel-log-btn"
               onPress={submit}
               disabled={!selected || !amount}
-              style={[styles.primaryBtn, (!selected || !amount) && styles.primaryBtnDisabled]}
+              style={[styles.primaryBtn, (!selected || !amount) && styles.primaryBtnDisabled, { paddingVertical: 14 }]}
             >
               <Text style={styles.primaryBtnText}>LOG INTAKE · +{XP_RULES.mealLogged} XP</Text>
             </TouchableOpacity>
@@ -786,9 +807,12 @@ export function FuelView({
             if (entries.length === 0) return [];
             return [
               mealName ? (
-                <Text key={`header-${mealName}`} style={[styles.subKicker, { marginTop: 10, marginBottom: 4 }]}>
-                  {mealName}
-                </Text>
+                <View key={`header-${mealName}`} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10, marginBottom: 4 }}>
+                  <Text style={styles.subKicker}>{mealName}</Text>
+                  <TouchableOpacity onPress={() => handleSaveMealGroup(entries, mealName)}>
+                    <Text style={{ color: C.science, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>+ SAVE AS MEAL</Text>
+                  </TouchableOpacity>
+                </View>
               ) : (
                 <Text key="header-uncat" style={[styles.subKicker, { marginTop: 10, marginBottom: 4, color: C.textMute }]}>
                   OTHER
