@@ -37,8 +37,19 @@ import {
   type MacroRem,
   type PlannedMeal,
 } from "../utils";
-import type { LogEntry } from "../types";
+import type { LogEntry, FoodMeal } from "../types";
 import { searchUsdaFoods, USDA_AVAILABLE } from "../api";
+
+const FOOD_MEALS: FoodMeal[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACKS"];
+
+function guessMeal(): FoodMeal {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return "BREAKFAST";
+  if (h >= 11 && h < 15) return "LUNCH";
+  if (h >= 15 && h < 19) return "SNACKS";
+  if (h >= 19) return "DINNER";
+  return "SNACKS";
+}
 
 type FuelMode = "foods" | "recipes";
 type RecipeSort = "default" | "fit";
@@ -70,6 +81,8 @@ export function FuelView({
   recents,
   onLog,
   onWipe,
+  onRemoveEntry,
+  onUpdateEntry,
   remaining,
   favourites,
   onToggleFavourite,
@@ -81,6 +94,8 @@ export function FuelView({
   recents: string[];
   onLog: (e: LogEntry) => void;
   onWipe: () => void;
+  onRemoveEntry: (id: string) => void;
+  onUpdateEntry: (entry: LogEntry) => void;
   remaining: MacroRem;
   favourites: string[];
   onToggleFavourite: (recipeId: string) => void;
@@ -125,6 +140,10 @@ export function FuelView({
   const [formIngredients, setFormIngredients] = useState("");
   const [formSteps, setFormSteps] = useState("");
   const [formDescription, setFormDescription] = useState("");
+
+  // Meal category & log editing
+  const [mealType, setMealType] = useState<FoodMeal>(guessMeal);
+  const [editEntry, setEditEntry] = useState<LogEntry | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -238,6 +257,7 @@ export function FuelView({
       c: round(selected.c * ratio, 1),
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       dateKey: todayKey(),
+      meal: mealType,
     };
     onLog(entry);
     setSelected(null);
@@ -247,6 +267,13 @@ export function FuelView({
   const logRecipe = (r: Recipe, factor = 1) => {
     haptic("medium");
     const suffix = factor !== 1 ? ` ×${factor}` : "";
+    const recipeMealMap: Record<string, FoodMeal> = {
+      BREAKFAST: "BREAKFAST",
+      LUNCH: "LUNCH",
+      DINNER: "DINNER",
+      "POST-WO": "SNACKS",
+      SNACK: "SNACKS",
+    };
     const entry: LogEntry = {
       id: `${Date.now()}`,
       foodId: r.id,
@@ -260,6 +287,7 @@ export function FuelView({
       c: round(r.c * factor, 1),
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       dateKey: todayKey(),
+      meal: recipeMealMap[r.meal] ?? mealType,
     };
     onLog(entry);
     setOpenRecipe(null);
@@ -502,6 +530,24 @@ export function FuelView({
               )}
             </View>
 
+            <View style={{ marginBottom: 12 }}>
+              <Text style={styles.label}>MEAL</Text>
+              <View style={styles.unitRow}>
+                {FOOD_MEALS.map((m) => {
+                  const active = mealType === m;
+                  return (
+                    <TouchableOpacity
+                      key={m}
+                      onPress={() => { haptic(); setMealType(m); }}
+                      style={[styles.unitChip, active && styles.unitChipActive]}
+                    >
+                      <Text style={[styles.unitChipText, active && { color: C.bg }]}>{m}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             <TouchableOpacity
               testID="fuel-log-btn"
               onPress={submit}
@@ -733,22 +779,131 @@ export function FuelView({
             <Text style={styles.emptyText}>No intake logged. Eat or fast.</Text>
           </View>
         ) : (
-          [...log].reverse().map((e) => (
-            <View key={e.id} style={styles.logCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.logName}>{e.name}</Text>
-                <Text style={styles.logMeta}>
-                  {e.amount} {e.unit}{e.grams && e.unit !== "g" && e.unit !== "serving" ? ` (${e.grams}g)` : ""} · {e.time}
+          (["BREAKFAST", "LUNCH", "DINNER", "SNACKS", undefined] as Array<FoodMeal | undefined>).flatMap((mealName) => {
+            const entries = log.filter((e) =>
+              mealName === undefined ? !e.meal : e.meal === mealName
+            );
+            if (entries.length === 0) return [];
+            return [
+              mealName ? (
+                <Text key={`header-${mealName}`} style={[styles.subKicker, { marginTop: 10, marginBottom: 4 }]}>
+                  {mealName}
                 </Text>
-              </View>
-              <View style={styles.logMacros}>
-                <Text style={styles.logKcal}>{e.kcal} kcal</Text>
-                <Text style={styles.logBreak}>{e.p}P · {e.f}F · {e.c}C</Text>
-              </View>
-            </View>
-          ))
+              ) : (
+                <Text key="header-uncat" style={[styles.subKicker, { marginTop: 10, marginBottom: 4, color: C.textMute }]}>
+                  OTHER
+                </Text>
+              ),
+              ...[...entries].reverse().map((e) => (
+                <TouchableOpacity
+                  key={e.id}
+                  style={styles.logCard}
+                  onPress={() => setEditEntry(e)}
+                  activeOpacity={0.75}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.logName}>{e.name}</Text>
+                    <Text style={styles.logMeta}>
+                      {e.amount} {e.unit}{e.grams && e.unit !== "g" && e.unit !== "serving" ? ` (${e.grams}g)` : ""} · {e.time}
+                    </Text>
+                  </View>
+                  <View style={styles.logMacros}>
+                    <Text style={styles.logKcal}>{e.kcal} kcal</Text>
+                    <Text style={styles.logBreak}>{e.p}P · {e.f}F · {e.c}C</Text>
+                  </View>
+                  <Ionicons name="pencil-outline" size={14} color={C.textMute} style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+              )),
+            ];
+          })
         )}
       </ScrollView>
+
+      {/* EDIT LOG ENTRY MODAL */}
+      {editEntry && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setEditEntry(null)}>
+          <Pressable style={styles.modalOverlay} onPress={() => setEditEntry(null)}>
+            <Pressable style={styles.modalScrollCard} onPress={(ev) => ev.stopPropagation()}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.logName} numberOfLines={2}>{editEntry.name}</Text>
+                  <Text style={styles.logMeta}>
+                    {editEntry.amount} {editEntry.unit} · {editEntry.kcal} kcal · {editEntry.p}P / {editEntry.f}F / {editEntry.c}C
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setEditEntry(null)}>
+                  <Ionicons name="close" size={22} color={C.text} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.subKicker, { marginBottom: 8 }]}>ADJUST PORTION</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {[
+                  { label: "−½", factor: 0.5 },
+                  { label: "−¼", factor: 0.75 },
+                  { label: "+¼", factor: 1.25 },
+                  { label: "+½", factor: 1.5 },
+                  { label: "×2", factor: 2 },
+                ].map(({ label, factor }) => (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => {
+                      haptic("light");
+                      const newAmount = round(editEntry.amount * factor, 2);
+                      const f2 = newAmount / editEntry.amount;
+                      onUpdateEntry({
+                        ...editEntry,
+                        amount: newAmount,
+                        grams: round(editEntry.grams * f2, 1),
+                        kcal: round(editEntry.kcal * f2, 1),
+                        p: round(editEntry.p * f2, 1),
+                        f: round(editEntry.f * f2, 1),
+                        c: round(editEntry.c * f2, 1),
+                      });
+                      setEditEntry(null);
+                    }}
+                    style={[styles.unitChip, { paddingHorizontal: 18 }]}
+                  >
+                    <Text style={styles.unitChipText}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.subKicker, { marginBottom: 8 }]}>MEAL CATEGORY</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {FOOD_MEALS.map((m) => {
+                  const active = editEntry.meal === m;
+                  return (
+                    <TouchableOpacity
+                      key={m}
+                      onPress={() => {
+                        haptic("light");
+                        onUpdateEntry({ ...editEntry, meal: m });
+                        setEditEntry(null);
+                      }}
+                      style={[styles.unitChip, active && styles.unitChipActive]}
+                    >
+                      <Text style={[styles.unitChipText, active && { color: C.bg }]}>{m}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <TouchableOpacity
+                onPress={() => {
+                  haptic("medium");
+                  onRemoveEntry(editEntry.id);
+                  setEditEntry(null);
+                }}
+                style={[styles.secondaryBtn, { borderColor: C.penalty }]}
+              >
+                <Ionicons name="trash-outline" size={14} color={C.penalty} />
+                <Text style={[styles.secondaryBtnText, { color: C.penalty }]}>REMOVE ENTRY</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
 
       {/* FOOD PICKER MODAL */}
       <Modal visible={picker} animationType="slide" onRequestClose={closePicker}>
@@ -772,7 +927,13 @@ export function FuelView({
               />
             </View>
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
-              {filtered.map((f) => (
+              {search.trim().length === 0 && recentFoods.length > 0 && (
+                <Text style={[styles.subKicker, { marginBottom: 8 }]}>RECENTLY USED</Text>
+              )}
+              {search.trim().length === 0 && recentFoods.length === 0 && (
+                <Text style={styles.emptyText}>Type to search foods.</Text>
+              )}
+              {(search.trim().length === 0 ? recentFoods : filtered).map((f) => (
                 <Pressable
                   key={f.id}
                   testID={`food-option-${f.id}`}
@@ -789,7 +950,7 @@ export function FuelView({
                   </View>
                 </Pressable>
               ))}
-              {filtered.length === 0 && <Text style={styles.emptyText}>No match. Whole foods only.</Text>}
+              {search.trim().length > 0 && filtered.length === 0 && <Text style={styles.emptyText}>No match. Whole foods only.</Text>}
 
               {/* Online food search via USDA FoodData Central */}
               {search.trim().length > 1 && (
