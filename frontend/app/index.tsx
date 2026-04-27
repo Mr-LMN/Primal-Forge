@@ -406,6 +406,7 @@ export default function Index() {
               setEquipment={saveEquipment}
               onLogWorkout={handleWorkoutLog}
               loggedToday={workoutsLogged.filter((w) => w.date === todayKey())}
+              profile={profile}
             />
           )}
           {tab === "scan" && (

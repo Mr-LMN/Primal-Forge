@@ -47,17 +47,46 @@ function exerciseLookupErrorMessage(err: unknown): string {
   return "Couldn't reach the exercise database. Check your connection and try again.";
 }
 
+/* ── MET lookup table ──────────────────────────────────── */
+function getMet(name: string): number {
+  const n = name.toLowerCase();
+  if (/running|run|sprint/.test(n)) return 9.5;
+  if (/cycling|bike|bicycle/.test(n)) return 7.5;
+  if (/burpee|hiit/.test(n)) return 8.0;
+  if (/deadlift|squat|bench|row/.test(n)) return 6.0;
+  if (/yoga|mobility|stretch|foam/.test(n)) return 2.5;
+  if (/push.?up|pull.?up|dip|lunge|bodyweight/.test(n)) return 5.0;
+  return 5.0;
+}
+
+function calcGlycogen(met: number, weightKg: number, durationMin: number): number {
+  const cho = met < 6 ? 0.5 : met <= 8 ? 0.65 : 0.80;
+  return (met * weightKg * (durationMin / 60) * 4) * cho / 4;
+}
+
+type BuilderExercise = {
+  name: string;
+  sets: number;
+  reps: number;
+  durationSec: number;
+  useTime: boolean;
+  met: number;
+};
+
 export function ForgeView({
   equipment,
   setEquipment,
   onLogWorkout,
   loggedToday,
+  profile,
 }: {
   equipment: Equipment[];
   setEquipment: (e: Equipment[]) => void;
   onLogWorkout: (w: Workout) => void;
   loggedToday: WorkoutLogged[];
+  profile?: { weight: number } | null;
 }) {
+  const bodyWeight = profile?.weight ?? 80;
   const [filter, setFilter] = useState<WorkoutFocus | "all">("all");
   const [time, setTime] = useState<"all" | 15 | 30 | 60>("all");
   const [myKitOnly, setMyKitOnly] = useState(false);
@@ -76,6 +105,92 @@ export function ForgeView({
   const [lookupError, setLookupError] = useState("");
   const [lookupDbEntry, setLookupDbEntry] = useState<ExerciseDbEntry | null>(null);
   const lookupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Custom workout builder state ──────────────────────────
+  const [builderVisible, setBuilderVisible] = useState(false);
+  const [builderStep, setBuilderStep] = useState<1 | 2 | 3>(1);
+  const [builderName, setBuilderName] = useState("");
+  const [builderFocus, setBuilderFocus] = useState<WorkoutFocus>("strength");
+  const [builderDuration, setBuilderDuration] = useState(30);
+  const [builderExercises, setBuilderExercises] = useState<BuilderExercise[]>([]);
+  const [bQuery, setBQuery] = useState("");
+  const [bResults, setBResults] = useState<WgerSuggestion[]>([]);
+  const [bLoading, setBLoading] = useState(false);
+  const bDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openBuilder = () => {
+    setBuilderStep(1);
+    setBuilderName("");
+    setBuilderFocus("strength");
+    setBuilderDuration(30);
+    setBuilderExercises([]);
+    setBQuery("");
+    setBResults([]);
+    setBuilderVisible(true);
+  };
+
+  const handleBSearch = (text: string) => {
+    setBQuery(text);
+    if (bDebounce.current) clearTimeout(bDebounce.current);
+    const term = text.trim();
+    if (term.length < 2) { setBResults([]); return; }
+    bDebounce.current = setTimeout(async () => {
+      setBLoading(true);
+      try {
+        const res = await searchWgerExercises(term);
+        setBResults(res);
+      } catch { setBResults([]); }
+      finally { setBLoading(false); }
+    }, 400);
+  };
+
+  const addBuilderExercise = (s: WgerSuggestion) => {
+    haptic("light");
+    const met = getMet(s.data.name);
+    setBuilderExercises((prev) => [
+      ...prev,
+      { name: s.data.name, sets: 3, reps: 10, durationSec: 60, useTime: false, met },
+    ]);
+    setBQuery("");
+    setBResults([]);
+  };
+
+  const updateBuilderEx = (i: number, patch: Partial<BuilderExercise>) => {
+    setBuilderExercises((prev) => prev.map((e, idx) => idx === i ? { ...e, ...patch } : e));
+  };
+
+  const removeBuilderEx = (i: number) => {
+    setBuilderExercises((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const totalGlycogen = builderExercises.reduce((sum, ex) => {
+    const minPerEx = ex.useTime
+      ? ex.durationSec / 60
+      : (ex.sets * ex.reps * 3) / 60; // ~3s per rep
+    return sum + calcGlycogen(ex.met, bodyWeight, minPerEx);
+  }, 0);
+
+  const saveBuilderWorkout = () => {
+    if (!builderName.trim() || builderExercises.length === 0) return;
+    haptic("success");
+    const w: Workout = {
+      id: `custom-${Date.now()}`,
+      name: builderName.trim().toUpperCase(),
+      time: builderDuration,
+      focus: builderFocus,
+      intensity: "med",
+      description: `Custom workout · ${builderExercises.length} exercises · ~${builderDuration} min`,
+      scienceNote: `Estimated glycogen cost: ${totalGlycogen.toFixed(1)} g CHO at ${bodyWeight} kg bodyweight.`,
+      exercises: builderExercises.map((ex) => ({
+        name: ex.name,
+        setsReps: ex.useTime ? `${ex.sets} × ${ex.durationSec}s` : `${ex.sets} × ${ex.reps} reps`,
+        equipment: ["bodyweight"],
+        videoQuery: `${ex.name} exercise tutorial form`,
+      })),
+    };
+    onLogWorkout(w);
+    setBuilderVisible(false);
+  };
 
   const filtered = useMemo(() => {
     let list = [...WORKOUTS];
@@ -291,22 +406,39 @@ export function ForgeView({
           })}
         </View>
 
-        <TouchableOpacity
-          testID="exercise-lookup-btn"
-          onPress={() => { haptic(); setLookupVisible(true); }}
-          style={{
-            flexDirection: "row", alignItems: "center", gap: 6,
-            alignSelf: "flex-start", marginBottom: 14,
-            backgroundColor: "rgba(14,165,233,0.1)",
-            borderWidth: 1, borderColor: C.science,
-            paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-          }}
-        >
-          <Ionicons name="search" size={13} color={C.science} />
-          <Text style={{ color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>
-            EXERCISE LOOKUP
-          </Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          <TouchableOpacity
+            testID="exercise-lookup-btn"
+            onPress={() => { haptic(); setLookupVisible(true); }}
+            style={{
+              flexDirection: "row", alignItems: "center", gap: 6,
+              backgroundColor: "rgba(14,165,233,0.1)",
+              borderWidth: 1, borderColor: C.science,
+              paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+            }}
+          >
+            <Ionicons name="search" size={13} color={C.science} />
+            <Text style={{ color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>
+              EXERCISE LOOKUP
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="build-workout-btn"
+            onPress={openBuilder}
+            style={{
+              flexDirection: "row", alignItems: "center", gap: 6,
+              backgroundColor: "rgba(255,106,0,0.1)",
+              borderWidth: 1, borderColor: C.fire,
+              paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+            }}
+          >
+            <Ionicons name="construct-outline" size={13} color={C.fire} />
+            <Text style={{ color: C.fire, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>
+              BUILD WORKOUT
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.forgeCount} testID="forge-count">
           <Text style={styles.forgeCountText}>{filtered.length} of {WORKOUTS.length} workouts</Text>
@@ -554,6 +686,252 @@ export function ForgeView({
             onBack={() => setInSession(false)}
           />
         )}
+      </Modal>
+
+      {/* ── Custom Workout Builder Modal ──────────────────────── */}
+      <Modal visible={builderVisible} animationType="slide" onRequestClose={() => setBuilderVisible(false)}>
+        <SafeAreaView style={[styles.root, { flex: 1 }]} edges={["top", "bottom"]}>
+          <View style={styles.shell}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.brand}>
+                {builderStep === 1 ? "BUILD WORKOUT" : builderStep === 2 ? "ADD EXERCISES" : "CONFIGURE"}
+              </Text>
+              <TouchableOpacity onPress={() => setBuilderVisible(false)} testID="close-builder">
+                <Ionicons name="close" size={26} color={C.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* progress bar */}
+            <View style={{ height: 3, backgroundColor: C.border, marginHorizontal: 16, borderRadius: 2 }}>
+              <View style={{ height: 3, backgroundColor: C.fire, borderRadius: 2, width: `${(builderStep / 3) * 100}%` as any }} />
+            </View>
+
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
+              {/* ── Step 1: Name + focus + duration ── */}
+              {builderStep === 1 && (
+                <View>
+                  <Text style={[styles.label, { marginTop: 16 }]}>WORKOUT NAME</Text>
+                  <TextInput
+                    testID="builder-name-input"
+                    value={builderName}
+                    onChangeText={setBuilderName}
+                    placeholder="e.g. Monday Strength"
+                    placeholderTextColor={C.textMute}
+                    style={styles.input}
+                    autoFocus
+                  />
+
+                  <Text style={[styles.subKicker, { marginTop: 16 }]}>FOCUS</Text>
+                  <View style={styles.filterRow}>
+                    {(["strength", "fatburn", "metcon", "performance", "mobility", "recovery"] as WorkoutFocus[]).map((f) => (
+                      <TouchableOpacity
+                        key={f}
+                        onPress={() => { haptic("light"); setBuilderFocus(f); }}
+                        style={[styles.filterChip, builderFocus === f && styles.filterChipActive]}
+                      >
+                        <Text style={[styles.filterChipText, builderFocus === f && { color: C.bg }]}>
+                          {FOCUS_META[f].label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <Text style={[styles.subKicker, { marginTop: 8 }]}>DURATION (MINUTES)</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {[15, 30, 45, 60, 90].map((d) => (
+                      <TouchableOpacity
+                        key={d}
+                        onPress={() => { haptic("light"); setBuilderDuration(d); }}
+                        style={[
+                          styles.filterChip,
+                          builderDuration === d && styles.filterChipActive,
+                        ]}
+                      >
+                        <Text style={[styles.filterChipText, builderDuration === d && { color: C.bg }]}>{d}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TouchableOpacity
+                    testID="builder-next-1"
+                    onPress={() => { if (builderName.trim().length > 1) setBuilderStep(2); }}
+                    disabled={builderName.trim().length < 2}
+                    style={[styles.primaryBtn, { marginTop: 24 }, builderName.trim().length < 2 && styles.primaryBtnDisabled]}
+                  >
+                    <Text style={styles.primaryBtnText}>NEXT → ADD EXERCISES</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* ── Step 2: Search + add exercises ── */}
+              {builderStep === 2 && (
+                <View>
+                  <View style={[styles.searchWrap, { marginHorizontal: 0, marginTop: 16, marginBottom: 10 }]}>
+                    <Ionicons name="search" size={16} color={C.textDim} />
+                    <TextInput
+                      testID="builder-search-input"
+                      value={bQuery}
+                      onChangeText={handleBSearch}
+                      placeholder="Search exercises…"
+                      placeholderTextColor={C.textMute}
+                      style={styles.searchInput}
+                      autoFocus
+                    />
+                    {bLoading && <ActivityIndicator size="small" color={C.textDim} />}
+                  </View>
+
+                  {bResults.map((s) => {
+                    const sid = wgerSuggestionId(s);
+                    return (
+                      <TouchableOpacity
+                        key={sid}
+                        testID={`builder-result-${sid}`}
+                        onPress={() => addBuilderExercise(s)}
+                        style={[styles.foodRow, { justifyContent: "space-between" }]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.foodRowName}>{s.data.name}</Text>
+                          <Text style={styles.foodRowCat}>{s.data.category}</Text>
+                        </View>
+                        <Ionicons name="add-circle" size={22} color={C.optimal} />
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  {builderExercises.length > 0 && (
+                    <View style={{ marginTop: 16 }}>
+                      <Text style={[styles.subKicker, { marginBottom: 8 }]}>ADDED ({builderExercises.length})</Text>
+                      {builderExercises.map((ex, i) => (
+                        <View key={i} style={[styles.exerciseCard, { flexDirection: "row", alignItems: "center" }]}>
+                          <Text style={[styles.exerciseName, { flex: 1 }]}>{ex.name}</Text>
+                          <Text style={{ color: C.science, fontSize: 10, fontWeight: "900", marginRight: 8 }}>MET {ex.met.toFixed(1)}</Text>
+                          <TouchableOpacity onPress={() => removeBuilderEx(i)}>
+                            <Ionicons name="close-circle" size={20} color={C.penalty} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 24 }}>
+                    <TouchableOpacity onPress={() => setBuilderStep(1)} style={[styles.secondaryBtn, { flex: 1 }]}>
+                      <Text style={styles.secondaryBtnText}>← BACK</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      testID="builder-next-2"
+                      onPress={() => { if (builderExercises.length > 0) setBuilderStep(3); }}
+                      disabled={builderExercises.length === 0}
+                      style={[styles.primaryBtn, { flex: 2 }, builderExercises.length === 0 && styles.primaryBtnDisabled]}
+                    >
+                      <Text style={styles.primaryBtnText}>NEXT → CONFIGURE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* ── Step 3: Configure sets/reps + glycogen preview ── */}
+              {builderStep === 3 && (
+                <View>
+                  {/* Glycogen summary */}
+                  <View style={[styles.scienceBox, { marginTop: 8, marginBottom: 16 }]}>
+                    <Text style={styles.scienceKicker}>ESTIMATED GLYCOGEN COST</Text>
+                    <Text style={{ color: C.fire, fontSize: 32, fontWeight: "900", marginTop: 4 }}>
+                      {totalGlycogen.toFixed(1)}<Text style={{ fontSize: 14, color: C.textDim }}> g CHO</Text>
+                    </Text>
+                    <Text style={[styles.scienceBody, { marginTop: 4, fontSize: 11 }]}>
+                      Based on {bodyWeight} kg bodyweight, MET values, and set durations.
+                    </Text>
+                  </View>
+
+                  {builderExercises.map((ex, i) => (
+                    <View key={i} style={[styles.exerciseCard, { marginBottom: 12 }]}>
+                      <Text style={styles.exerciseName}>{ex.name}</Text>
+                      <Text style={{ color: C.science, fontSize: 10, fontWeight: "900", marginBottom: 10 }}>
+                        MET {ex.met.toFixed(1)} · ~{calcGlycogen(ex.met, bodyWeight, ex.useTime ? ex.durationSec / 60 : (ex.sets * ex.reps * 3) / 60).toFixed(2)} g CHO
+                      </Text>
+
+                      {/* Sets */}
+                      <Text style={[styles.label, { marginBottom: 4 }]}>SETS</Text>
+                      <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <TouchableOpacity
+                            key={n}
+                            onPress={() => updateBuilderEx(i, { sets: n })}
+                            style={[styles.filterChip, ex.sets === n && styles.filterChipActive, { paddingHorizontal: 12, paddingVertical: 6 }]}
+                          >
+                            <Text style={[styles.filterChipText, ex.sets === n && { color: C.bg }]}>{n}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      {/* Reps or duration toggle */}
+                      <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => updateBuilderEx(i, { useTime: false })}
+                          style={[styles.filterChip, !ex.useTime && styles.filterChipActive]}
+                        >
+                          <Text style={[styles.filterChipText, !ex.useTime && { color: C.bg }]}>REPS</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => updateBuilderEx(i, { useTime: true })}
+                          style={[styles.filterChip, ex.useTime && styles.filterChipActive]}
+                        >
+                          <Text style={[styles.filterChipText, ex.useTime && { color: C.bg }]}>DURATION</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {!ex.useTime ? (
+                        <View>
+                          <Text style={[styles.label, { marginBottom: 4 }]}>REPS</Text>
+                          <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                            {[5, 8, 10, 12, 15, 20].map((n) => (
+                              <TouchableOpacity
+                                key={n}
+                                onPress={() => updateBuilderEx(i, { reps: n })}
+                                style={[styles.filterChip, ex.reps === n && styles.filterChipActive, { paddingHorizontal: 10, paddingVertical: 6 }]}
+                              >
+                                <Text style={[styles.filterChipText, ex.reps === n && { color: C.bg }]}>{n}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      ) : (
+                        <View>
+                          <Text style={[styles.label, { marginBottom: 4 }]}>DURATION (SEC)</Text>
+                          <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                            {[20, 30, 45, 60, 90, 120].map((n) => (
+                              <TouchableOpacity
+                                key={n}
+                                onPress={() => updateBuilderEx(i, { durationSec: n })}
+                                style={[styles.filterChip, ex.durationSec === n && styles.filterChipActive, { paddingHorizontal: 10, paddingVertical: 6 }]}
+                              >
+                                <Text style={[styles.filterChipText, ex.durationSec === n && { color: C.bg }]}>{n}s</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                    <TouchableOpacity onPress={() => setBuilderStep(2)} style={[styles.secondaryBtn, { flex: 1 }]}>
+                      <Text style={styles.secondaryBtnText}>← BACK</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      testID="builder-save-btn"
+                      onPress={saveBuilderWorkout}
+                      style={[styles.logWorkoutBtn, { flex: 2, marginTop: 0 }]}
+                    >
+                      <Ionicons name="checkmark-circle" size={20} color={C.bg} />
+                      <Text style={styles.logWorkoutBtnText}>SAVE WORKOUT</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </SafeAreaView>
       </Modal>
 
       {/* Exercise Lookup — powered by Wger Workout Manager */}
