@@ -1,5 +1,5 @@
 // ─── Gemini AI Coach — API Service Layer ─────────────────────────────────────
-// Uses gemini-2.0-flash via REST API for cost efficiency.
+// Uses gemini-2.5-flash via REST API for cost efficiency.
 // All prompts are pre-built with user context for accurate coaching.
 
 import type {
@@ -17,9 +17,9 @@ import type { Equipment } from "./data";
 const _GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? "";
 export const GEMINI_AVAILABLE = !!_GEMINI_KEY;
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=`;
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 20000;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

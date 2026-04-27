@@ -20,6 +20,8 @@ export type Profile = {
   allergens?: string[];         // e.g. ["gluten","shellfish"]
 };
 
+export type FoodMeal = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACKS";
+
 export type LogEntry = {
   id: string;
   foodId: string;
@@ -33,6 +35,7 @@ export type LogEntry = {
   c: number;
   time: string;
   dateKey: string;
+  meal?: FoodMeal;
 };
 
 export type WeightEntry = { date: string; weight: number };

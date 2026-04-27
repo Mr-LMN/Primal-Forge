@@ -165,6 +165,8 @@ export function ForgeView({
     void runLookupSearch(term);
   };
 
+  const LOCAL_ID_BASE = 100000;
+
   const openLookupDetail = async (s: WgerSuggestion) => {
     haptic();
     setLookupDetailLoading(true);
@@ -185,7 +187,21 @@ export function ForgeView({
       if (dbResults.length > 0) setLookupDbEntry(dbResults[0]);
     } catch (err) {
       console.warn("[exercise-lookup] detail failed:", err);
-      setLookupError(exerciseLookupErrorMessage(err));
+      const id = wgerSuggestionId(s);
+      // For non-local exercises that fail to load, show basic info from search result
+      if (id < LOCAL_ID_BASE) {
+        setLookupDetail({
+          baseId: id,
+          name: s.data.name,
+          category: s.data.category,
+          description: "Full exercise data is unavailable offline. Search for this exercise on YouTube for form guides.",
+          muscles: [],
+          musclesSecondary: [],
+          equipment: [],
+        });
+      } else {
+        setLookupError(exerciseLookupErrorMessage(err));
+      }
     } finally {
       setLookupDetailLoading(false);
     }

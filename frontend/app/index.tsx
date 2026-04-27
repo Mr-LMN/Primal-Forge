@@ -385,6 +385,8 @@ export default function Index() {
               recents={recents}
               onLog={handleLog}
               onWipe={async () => saveLog(log.filter((e) => e.dateKey !== todayKey()))}
+              onRemoveEntry={async (id) => saveLog(log.filter((e) => e.id !== id))}
+              onUpdateEntry={async (entry) => saveLog(log.map((e) => e.id === entry.id ? entry : e))}
               remaining={{
                 kcal: Math.max(0, profile.calories - totals.kcal),
                 p: Math.max(0, profile.protein - totals.p),

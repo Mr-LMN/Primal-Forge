@@ -33,10 +33,10 @@ function getDailyLimit(
 
 /* ─── Quick chips ──────────────────────────────────────────────────────────── */
 const QUICK_CHIPS = [
-  { label: "How am I doing?", prompt: "Analyse my intake so far today. Am I on track for my goal?" },
-  { label: "What should I eat?", prompt: "MEAL_SUGGEST" },
-  { label: "Generate a workout", prompt: "WORKOUT_GEN" },
-  { label: "Keep or Bin: ___", prompt: "KEEP_OR_BIN" },
+  { label: "Am I on track?", prompt: "Analyse my intake so far today. Am I on track for my goal?" },
+  { label: "Fill my macros", prompt: "MEAL_SUGGEST" },
+  { label: "Plan a workout", prompt: "WORKOUT_GEN" },
+  { label: "Rate a supplement", prompt: "KEEP_OR_BIN" },
 ];
 
 /* ─── Props ────────────────────────────────────────────────────────────────── */
@@ -259,7 +259,7 @@ export function CoachView({
       {/* Supplement input overlay */}
       {showSupplementPrompt && (
         <View style={cs.overlayBar}>
-          <Text style={cs.overlayLabel}>KEEP OR BIN — ENTER SUPPLEMENT:</Text>
+          <Text style={cs.overlayLabel}>SUPPLEMENT RATING — ENTER NAME:</Text>
           <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
             <TextInput
               value={supplementInput} onChangeText={setSupplementInput}
