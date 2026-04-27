@@ -13,6 +13,7 @@ import {
   type Workout,
   type WorkoutFocus,
   type Equipment,
+  type MuscleGroup,
 } from "../data";
 import { styles } from "../styles";
 import { haptic, openYouTube } from "../utils";
@@ -29,6 +30,9 @@ import {
   type WgerExerciseDetail,
   type ExerciseDbEntry,
 } from "../api";
+import { useTheme } from "../theme";
+import { ImageCard } from "../components/ImageCard";
+import { MuscleMap } from "../components/MuscleMap";
 
 function exerciseLookupErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -86,6 +90,7 @@ export function ForgeView({
   loggedToday: WorkoutLogged[];
   profile?: { weight: number } | null;
 }) {
+  const { C: themeC } = useTheme();
   const bodyWeight = profile?.weight ?? 80;
   const [filter, setFilter] = useState<WorkoutFocus | "all">("all");
   const [time, setTime] = useState<"all" | 15 | 30 | 60>("all");
@@ -467,8 +472,16 @@ export function ForgeView({
               testID={`workout-${w.id}`}
               onPress={() => { haptic(); setShowAlt({}); setOpen(w); }}
               activeOpacity={0.85}
-              style={[styles.workoutCard, myKitOnly && !performable && styles.workoutCardLocked]}
+              style={[styles.workoutCard, myKitOnly && !performable && styles.workoutCardLocked,
+                { backgroundColor: themeC.card, borderColor: themeC.border }]}
             >
+              {/* Workout hero image */}
+              <ImageCard
+                query={w.name}
+                type="workout"
+                focus={w.focus}
+                height={100}
+              />
               <View style={styles.workoutHeaderRow}>
                 <View style={[styles.focusBadge, { backgroundColor: `${meta.color}22` }]}>
                   <Text style={[styles.focusBadgeText, { color: meta.color }]}>{meta.label}</Text>
@@ -557,13 +570,24 @@ export function ForgeView({
                   const exHas = ex.equipment.every((e) => e === "bodyweight" || equipment.includes(e));
                   const altsOpen = !!showAlt[i];
                   return (
-                    <View key={i} style={styles.exerciseCard} testID={`exercise-${i}`}>
+                    <View key={i} style={[styles.exerciseCard, { backgroundColor: themeC.card, borderColor: themeC.border }]} testID={`exercise-${i}`}>
                       <View style={styles.exerciseHeader}>
                         <Text style={styles.exerciseIdx}>{String(i + 1).padStart(2, "0")}</Text>
                         <Text style={styles.exerciseName}>{ex.name}</Text>
                       </View>
                       <Text style={styles.exerciseSets}>{ex.setsReps}</Text>
                       {ex.cue && <Text style={styles.exerciseCue}>↳ {ex.cue}</Text>}
+                      {/* Muscle map if data available */}
+                      {ex.muscles && (
+                        <View style={{ marginTop: 12, marginLeft: 38 }}>
+                          <Text style={[styles.subKicker, { marginBottom: 6 }]}>MUSCLES WORKED</Text>
+                          <MuscleMap
+                            primary={ex.muscles.primary as MuscleGroup[]}
+                            secondary={ex.muscles.secondary as MuscleGroup[]}
+                            size={120}
+                          />
+                        </View>
+                      )}
                       <View style={{ flexDirection: "row", marginLeft: 38, marginTop: 8, flexWrap: "wrap", gap: 4 }}>
                         {ex.equipment.map((e) => {
                           const m2 = EQUIPMENT_META[e];

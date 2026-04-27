@@ -21,6 +21,7 @@ import {
 } from "../src/data";
 import { styles } from "../src/styles";
 import { haptic, buildProfile, initialXP } from "../src/utils";
+import { ThemeProvider, useTheme } from "../src/theme";
 import type {
   Profile,
   LogEntry,
@@ -46,7 +47,10 @@ import { VaultView } from "../src/screens/VaultView";
 import { TrendsView } from "../src/screens/TrendsView";
 import { CoachView } from "../src/screens/CoachView";
 
-export default function Index() {
+// Inner component so it can use useTheme()
+function AppInner() {
+
+
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -296,7 +300,7 @@ export default function Index() {
   if (!loaded) {
     return (
       <View style={[styles.root, { justifyContent: "center", alignItems: "center" }]}>
-        <Text style={styles.brandSmall}>PRIMALFORGE</Text>
+        <Text style={styles.brandSmall}>PRIMAL<Text style={{ color: C.fire, fontWeight: "900" }}>FORGE</Text></Text>
       </View>
     );
   }
@@ -344,15 +348,20 @@ export default function Index() {
 
   const credits = Math.floor(xp.total / CREDIT_PER_XP) - xp.spent;
 
+  const { isDark, toggleTheme, C: themeC } = useTheme();
+
   return (
-    <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
-      <StatusBar style="light" />
-      <View style={styles.shell}>
+    <SafeAreaView style={[styles.root, { backgroundColor: themeC.bg }]} edges={["top", "bottom"]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <View style={[styles.shell, { backgroundColor: themeC.bg }]}>
         <Header
           profile={profile}
           streak={xp.streak}
           credits={credits}
           onReset={resetAll}
+          onThemeToggle={toggleTheme}
+          isDark={isDark}
+          xpTotal={xp.total}
           onWeight={() => {
             haptic();
             setWeightModal(true);
@@ -588,5 +597,13 @@ export default function Index() {
         </Pressable>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+export default function Index() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   );
 }
