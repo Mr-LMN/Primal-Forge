@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Modal, Pressable, Animated, TouchableOpacity, Alert } from "react-native";
+import { View, Text, Modal, Pressable, Animated, TouchableOpacity, Alert, PanResponder } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -67,6 +67,28 @@ export default function Index() {
   const [coachVisible, setCoachVisible] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
+  const [showHelpBubble, setShowHelpBubble] = useState(false);
+
+  // Draggable FAB
+  const fabAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const fabOffset = useRef({ x: 0, y: 0 });
+  const fabPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_e: any, gs: any) => Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4,
+      onPanResponderGrant: () => {
+        fabAnim.setOffset({ x: fabOffset.current.x, y: fabOffset.current.y });
+        fabAnim.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: fabAnim.x, dy: fabAnim.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_e: any, gs: any) => {
+        fabOffset.current = { x: fabOffset.current.x + gs.dx, y: fabOffset.current.y + gs.dy };
+        fabAnim.flattenOffset();
+      },
+    })
+  ).current;
 
   useEffect(() => {
     (async () => {
@@ -261,6 +283,16 @@ export default function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [macrosHitNow]);
 
+  // Show Anvil AI help bubble after 10 s on the HUD tab
+  useEffect(() => {
+    if (tab !== "hud" || coachVisible) {
+      setShowHelpBubble(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowHelpBubble(true), 10000);
+    return () => clearTimeout(timer);
+  }, [tab, coachVisible]);
+
   if (!loaded) {
     return (
       <View style={[styles.root, { justifyContent: "center", alignItems: "center" }]}>
@@ -428,21 +460,29 @@ export default function Index() {
         />
       </View>
 
-      {/* ANVIL FAB */}
-      <TouchableOpacity
+      {/* ANVIL FAB — hold and drag to reposition, tap to open */}
+      <Animated.View
         testID="anvil-fab"
-        onPress={() => { haptic("medium"); setCoachVisible(true); }}
+        {...fabPanResponder.panHandlers}
         style={{
           position: "absolute", bottom: 80, right: 16,
-          width: 52, height: 52, borderRadius: 26,
-          backgroundColor: C.fire, justifyContent: "center", alignItems: "center",
-          shadowColor: C.fire, shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+          transform: fabAnim.getTranslateTransform(),
+          zIndex: 100,
         }}
-        activeOpacity={0.8}
       >
-        <Text style={{ fontSize: 22 }}>⚒</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => { haptic("medium"); setCoachVisible(true); }}
+          style={{
+            width: 52, height: 52, borderRadius: 26,
+            backgroundColor: C.fire, justifyContent: "center", alignItems: "center",
+            shadowColor: C.fire, shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 22 }}>⚒</Text>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* ANVIL Coach Modal */}
       <Modal visible={coachVisible} animationType="slide" onRequestClose={() => setCoachVisible(false)}>
@@ -464,6 +504,36 @@ export default function Index() {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Anvil AI help bubble — appears after 10 s on HUD */}
+      {showHelpBubble && tab === "hud" && !coachVisible && (
+        <Pressable
+          onPress={() => { setShowHelpBubble(false); haptic("medium"); setCoachVisible(true); }}
+          style={{
+            position: "absolute", bottom: 145, right: 12,
+            backgroundColor: C.card, borderRadius: 14,
+            padding: 12, maxWidth: 210, zIndex: 99,
+            borderWidth: 1, borderColor: C.fire,
+            shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setShowHelpBubble(false)}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            style={{ position: "absolute", top: 8, right: 10 }}
+          >
+            <Ionicons name="close" size={14} color={C.textDim} />
+          </TouchableOpacity>
+          <Text style={{ color: C.fire, fontSize: 11, fontWeight: "900", letterSpacing: 1.5, marginBottom: 4 }}>
+            ⚒ ANVIL AI
+          </Text>
+          <Text style={{ color: C.text, fontSize: 12, fontWeight: "700", lineHeight: 17 }}>
+            Need help understanding your stats or what to do next?
+          </Text>
+          <Text style={{ color: C.textDim, fontSize: 11, marginTop: 5 }}>Tap to ask Anvil →</Text>
+        </Pressable>
+      )}
 
       {toast && (
         <Animated.View style={[styles.xpToast, { opacity: toastOpacity }]} pointerEvents="none">

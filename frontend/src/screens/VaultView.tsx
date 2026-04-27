@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, TIPS, XP_RULES, CREDIT_PER_XP, PERKS, todayKey, round } from "../data";
+import { C, TIPS, XP_RULES, CREDIT_PER_XP, PERKS, todayKey, formatDateDisplay, round } from "../data";
 import { styles } from "../styles";
 import { confirmAction } from "../utils";
 import type { Profile, XPState, BankHistoryEntry, WeightEntry, WorkoutLogged } from "../types";
@@ -176,7 +176,7 @@ export function VaultView({
       )}
       {bankHistory.map((h) => (
         <View key={h.date} style={styles.historyRow}>
-          <Text style={styles.historyDate}>{h.date}</Text>
+          <Text style={styles.historyDate}>{formatDateDisplay(h.date)}</Text>
           <Text style={styles.historyDeficit}>+{h.deficit}g</Text>
         </View>
       ))}

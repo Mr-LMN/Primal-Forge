@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, XP_RULES } from "../data";
+import { C, XP_RULES, formatDateDisplay } from "../data";
 import { styles } from "../styles";
 import type { WeightEntry } from "../types";
 
@@ -76,7 +76,7 @@ export function WeightCheckIn({
                 const pct = max === min ? 0.5 : (w.weight - min) / (max - min);
                 return (
                   <View key={w.date} style={styles.weightRow}>
-                    <Text style={styles.weightRowDate}>{w.date}</Text>
+                    <Text style={styles.weightRowDate}>{formatDateDisplay(w.date)}</Text>
                     <View style={styles.weightRowBarTrack}>
                       <View style={[styles.weightRowBarFill, { width: `${20 + pct * 80}%` }]} />
                     </View>
