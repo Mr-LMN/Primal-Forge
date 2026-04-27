@@ -39,6 +39,8 @@ import {
 } from "../utils";
 import type { LogEntry, FoodMeal } from "../types";
 import { searchUsdaFoods, USDA_AVAILABLE } from "../api";
+import { useTheme } from "../theme";
+import { ImageCard } from "../components/ImageCard";
 
 const FOOD_MEALS: FoodMeal[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACKS"];
 
@@ -103,6 +105,7 @@ export function FuelView({
   onSaveCustomRecipe: (r: Recipe) => void;
   onDeleteCustomRecipe: (id: string) => void;
 }) {
+  const { C: themeC } = useTheme();
   const [mode, setMode] = useState<FuelMode>("foods");
   const [recipeSort, setRecipeSort] = useState<RecipeSort>("default");
   const [picker, setPicker] = useState(false);
@@ -664,7 +667,14 @@ export function FuelView({
               const isCustom = customIds.has(r.id);
               const score = recipeSort === "fit" ? fitScore(r, remaining) : null;
               return (
-              <View key={r.id} style={styles.recipeCard} testID={`recipe-${r.id}`}>
+              <View key={r.id} style={[styles.recipeCard, { backgroundColor: themeC.card, borderColor: themeC.border }]} testID={`recipe-${r.id}`}>
+                {/* Recipe hero image */}
+                <ImageCard
+                  query={r.name}
+                  type="meal"
+                  height={110}
+                  sublabel={`${r.kcal} kcal · ${r.prepMin} min`}
+                />
                 <View style={styles.recipeHeadRow}>
                   <View style={styles.recipeMealBadge}>
                     <Text style={styles.recipeMealBadgeText}>{r.meal}</Text>

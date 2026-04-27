@@ -3,22 +3,29 @@
    Foods · Tips · Workouts · Equipment · Constants · Types
    ========================================================= */
 
+/**
+ * C — Static dark-palette fallback (kept for styles.ts compatibility).
+ * Use `useTheme().C` inside components for live light/dark switching.
+ */
 export const C = {
   bg: "#0a0a0a",
   bg2: "#111111",
   card: "#161616",
-  cardHi: "#1c1c1c",
+  cardHi: "#1e1e1e",
   border: "#262626",
   borderHi: "#3a3a3a",
-  text: "#f5f5f5",
+  text: "#f0f0f0",
   textDim: "#9a9a9a",
-  textMute: "#5f5f5f",
+  textMute: "#555555",
   optimal: "#22c55e",
   warning: "#f59e0b",
-  penalty: "#dc2626",
+  penalty: "#ef4444",
   science: "#0ea5e9",
   gold: "#f5b400",
-  fire: "#ff6a00",
+  fire: "#ff6b2b",
+  // Light theme extras (unused in static styles but needed for type compat)
+  headerGrad: ["#0a0a0a", "#141414"] as [string, string],
+  tabBg: "#111111",
 };
 
 export const STORAGE = {
@@ -684,6 +691,12 @@ export type WorkoutFocus = "fatburn" | "performance" | "strength" | "metcon" | "
 
 export type Alt = { name: string; equipment: Equipment[]; videoQuery: string };
 
+export type MuscleGroup =
+  | "chest" | "shoulders" | "biceps" | "triceps" | "forearms"
+  | "abs" | "obliques" | "quads" | "hip_flexors"
+  | "traps" | "lats" | "rhomboids" | "lower_back"
+  | "glutes" | "hamstrings" | "calves";
+
 export type Exercise = {
   name: string;
   setsReps: string;
@@ -691,6 +704,7 @@ export type Exercise = {
   videoQuery: string;
   equipment: Equipment[];
   alternatives?: Alt[];
+  muscles?: { primary: MuscleGroup[]; secondary: MuscleGroup[] };
 };
 
 export type Workout = {
@@ -763,7 +777,8 @@ export const WORKOUTS: Workout[] = [
     citation: "Tabata et al. (1996) Med Sci Sports Exerc 28(10):1327",
     exercises: [
       { name: "Burpee (8 rounds)", setsReps: "20s ON / 10s OFF × 8", cue: "Chest to floor every rep. No pacing.",
-        videoQuery: "burpee form tutorial " + SU, equipment: ["bodyweight"], alternatives: altBurpee },
+        videoQuery: "burpee form tutorial " + SU, equipment: ["bodyweight"], alternatives: altBurpee,
+        muscles: { primary: ["quads", "chest", "triceps"], secondary: ["shoulders", "abs", "calves"] } },
     ],
   },
   {
@@ -773,7 +788,8 @@ export const WORKOUTS: Workout[] = [
     citation: "Reynolds et al. (2016) Diabetologia 59(12):2572",
     exercises: [
       { name: "Brisk Walk (post-meal)", setsReps: "10 min · 100+ steps/min", cue: "Pace = comfortable but purposeful. Not a stroll.",
-        videoQuery: "brisk walking pace technique", equipment: ["bodyweight"] },
+        videoQuery: "brisk walking pace technique", equipment: ["bodyweight"],
+        muscles: { primary: ["quads", "calves"], secondary: ["glutes", "hamstrings"] } },
     ],
   },
   {
@@ -783,13 +799,17 @@ export const WORKOUTS: Workout[] = [
     citation: "LaForgia et al. (2006) J Sports Sci 24(12):1247",
     exercises: [
       { name: "Min 1 — KB Swings", setsReps: "15 reps", cue: "Hip hinge, not a squat. Glutes fire at the top.",
-        videoQuery: "kettlebell swing form " + SU, equipment: ["kettlebell"], alternatives: altKbSwing },
+        videoQuery: "kettlebell swing form " + SU, equipment: ["kettlebell"], alternatives: altKbSwing,
+        muscles: { primary: ["glutes", "hamstrings"], secondary: ["lower_back", "traps", "shoulders"] } },
       { name: "Min 2 — Push-ups", setsReps: "10 reps", cue: "Hands under shoulders. Full lockout.",
-        videoQuery: "push up form " + SU, equipment: ["bodyweight"] },
+        videoQuery: "push up form " + SU, equipment: ["bodyweight"],
+        muscles: { primary: ["chest", "triceps"], secondary: ["shoulders", "abs"] } },
       { name: "Min 3 — Air Squats", setsReps: "20 reps", cue: "Knees track toes. Hip below knee.",
-        videoQuery: "air squat form " + SU, equipment: ["bodyweight"] },
+        videoQuery: "air squat form " + SU, equipment: ["bodyweight"],
+        muscles: { primary: ["quads", "glutes"], secondary: ["hamstrings", "calves"] } },
       { name: "Min 4 — Row 200m / 10 burpees", setsReps: "200m row OR 10 burpees", cue: "Drive with legs first.",
-        videoQuery: "rowing technique concept2", equipment: ["rower"], alternatives: altRow },
+        videoQuery: "rowing technique concept2", equipment: ["rower"], alternatives: altRow,
+        muscles: { primary: ["quads", "hamstrings", "lats"], secondary: ["glutes", "rhomboids"] } },
     ],
   },
   {
