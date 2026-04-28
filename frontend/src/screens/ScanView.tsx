@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,13 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import {
-  C,
   INGREDIENTS,
   SCAN_SAMPLES,
   scanLabel,
@@ -23,7 +24,8 @@ import {
   type ScanResult,
   type RiskLevel,
 } from "../data";
-import { styles } from "../styles";
+import { useStyles, radii, shadow } from "../styles";
+import { useTheme, type Palette } from "../theme";
 import { haptic, confirmAction } from "../utils";
 import type { ScanHistEntry } from "../types";
 
@@ -44,10 +46,10 @@ type BarcodeState =
   | { kind: "error"; message: string };
 
 /* ── helpers ─────────────────────────────────────────────── */
-const verdictColor = (lvl: RiskLevel) =>
+const verdictColor = (C: Palette, lvl: RiskLevel) =>
   lvl === "green" ? C.optimal : lvl === "amber" ? C.warning : C.penalty;
 
-const levelColor = (lvl: RiskLevel) =>
+const levelColor = (C: Palette, lvl: RiskLevel) =>
   lvl === "red" ? C.penalty : lvl === "amber" ? C.warning : C.optimal;
 
 /* ── component ───────────────────────────────────────────── */
@@ -60,6 +62,16 @@ export function ScanView({
   onSave: (e: ScanHistEntry) => void;
   onClear: () => void;
 }) {
+  const { C, isDark } = useTheme();
+  const styles = useStyles();
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [opacity, translateY]);
   const [input, setInput] = useState("");
   const [productLabel, setProductLabel] = useState("");
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -293,7 +305,12 @@ export function ScanView({
         </View>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" testID="scan-view">
+      <Animated.ScrollView
+        style={{ flex: 1, opacity, transform: [{ translateY }] }}
+        contentContainerStyle={styles.scrollPad}
+        keyboardShouldPersistTaps="handled"
+        testID="scan-view"
+      >
         <Text style={styles.sectionKicker}>SCAN · INGREDIENT TRUTH</Text>
 
         {/* ── 1. SCAN BARCODE hero card ──────────────────────── */}
@@ -450,9 +467,9 @@ export function ScanView({
         {result && (
           <View testID="scan-result" style={{ marginTop: 20 }}>
             {/* Score circle */}
-            <View style={[styles.scanCircle, { borderColor: verdictColor(result.verdict) }]} testID="scan-score-circle">
-              <Text style={[styles.scanCircleScore, { color: verdictColor(result.verdict) }]}>{result.score}</Text>
-              <Text style={[styles.scanCircleSub, { color: verdictColor(result.verdict) }]}>
+            <View style={[styles.scanCircle, { borderColor: verdictColor(C, result.verdict) }]} testID="scan-score-circle">
+              <Text style={[styles.scanCircleScore, { color: verdictColor(C, result.verdict) }]}>{result.score}</Text>
+              <Text style={[styles.scanCircleSub, { color: verdictColor(C, result.verdict) }]}>
                 {result.verdict === "green" ? "CLEAN" : result.verdict === "amber" ? "CAUTION" : "AVOID"}
               </Text>
             </View>
@@ -602,8 +619,8 @@ export function ScanView({
             </View>
             {history.map((h) => (
               <View key={h.id} style={styles.scanHistoryCard} testID={`scan-hist-${h.id}`}>
-                <View style={[styles.scanHistDot, { borderColor: levelColor(h.verdict) }]}>
-                  <Text style={[styles.scanHistDotText, { color: levelColor(h.verdict) }]}>{h.score}</Text>
+                <View style={[styles.scanHistDot, { borderColor: levelColor(C, h.verdict) }]}>
+                  <Text style={[styles.scanHistDotText, { color: levelColor(C, h.verdict) }]}>{h.score}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.scanHistName}>{h.label}</Text>
@@ -613,7 +630,7 @@ export function ScanView({
             ))}
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 }

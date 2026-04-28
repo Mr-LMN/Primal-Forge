@@ -5,7 +5,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import {
-  C,
   STORAGE,
   TIPS,
   XP_RULES,
@@ -19,7 +18,7 @@ import {
   type Recipe,
   type RiskLevel,
 } from "../src/data";
-import { styles } from "../src/styles";
+import { useStyles, radii, shadow } from "../src/styles";
 import { haptic, buildProfile, initialXP } from "../src/utils";
 import { ThemeProvider, useTheme } from "../src/theme";
 import type {
@@ -49,7 +48,8 @@ import { CoachView } from "../src/screens/CoachView";
 
 // Inner component so it can use useTheme()
 function AppInner() {
-
+  const { isDark, toggleTheme, C } = useTheme();
+  const styles = useStyles();
 
   const [loaded, setLoaded] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -348,12 +348,10 @@ function AppInner() {
 
   const credits = Math.floor(xp.total / CREDIT_PER_XP) - xp.spent;
 
-  const { isDark, toggleTheme, C: themeC } = useTheme();
-
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: themeC.bg }]} edges={["top", "bottom"]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: C.bg }]} edges={["top", "bottom"]}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <View style={[styles.shell, { backgroundColor: themeC.bg }]}>
+      <View style={[styles.shell, { backgroundColor: C.bg }]}>
         <Header
           profile={profile}
           streak={xp.streak}
@@ -484,12 +482,14 @@ function AppInner() {
       >
         <TouchableOpacity
           onPress={() => { haptic("medium"); setCoachVisible(true); }}
-          style={{
-            width: 52, height: 52, borderRadius: 26,
-            backgroundColor: C.fire, justifyContent: "center", alignItems: "center",
-            shadowColor: C.fire, shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
-          }}
+          style={[
+            {
+              width: 52, height: 52, borderRadius: 26,
+              backgroundColor: C.fire, justifyContent: "center", alignItems: "center",
+              shadowColor: C.fire,
+            },
+            shadow(isDark, 4),
+          ]}
           activeOpacity={0.8}
         >
           <Text style={{ fontSize: 22 }}>⚒</Text>
@@ -521,14 +521,15 @@ function AppInner() {
       {showHelpBubble && tab === "hud" && !coachVisible && (
         <Pressable
           onPress={() => { setShowHelpBubble(false); haptic("medium"); setCoachVisible(true); }}
-          style={{
-            position: "absolute", bottom: 145, right: 12,
-            backgroundColor: C.card, borderRadius: 14,
-            padding: 12, maxWidth: 210, zIndex: 99,
-            borderWidth: 1, borderColor: C.fire,
-            shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
-          }}
+          style={[
+            {
+              position: "absolute", bottom: 145, right: 12,
+              backgroundColor: C.card, borderRadius: radii.lg,
+              padding: 12, maxWidth: 210, zIndex: 99,
+              borderWidth: 1, borderColor: C.fire,
+            },
+            shadow(isDark, 3),
+          ]}
         >
           <TouchableOpacity
             onPress={() => setShowHelpBubble(false)}

@@ -1,11 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet,
+  Animated, Easing,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C } from "../data";
-import { styles } from "../styles";
+import { useTheme, type Palette } from "../theme";
+import { useStyles, radii, shadow } from "../styles";
 import { haptic } from "../utils";
 import type {
   Profile, Totals, CoachMessage, WorkoutLogged,
@@ -55,6 +56,9 @@ export function CoachView({
   profile, totals, remaining, equipment, recentWorkouts,
   loggedMealsToday, loggedWorkoutToday, onClose,
 }: Props) {
+  const { C, isDark } = useTheme();
+  const styles = useStyles();
+  const cs = useMemo(() => makeCoachStyles(C, isDark), [C, isDark]);
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,6 +78,12 @@ export function CoachView({
   const dailyLimit = getDailyLimit(userTier, loggedMealsToday, loggedWorkoutToday);
   const promptsRemaining = Math.max(0, dailyLimit - promptsUsed);
   const atLimit = promptsRemaining <= 0;
+
+  // Entry animation
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [opacity]);
 
   const ctx: CoachContext = { profile, totals, remaining, equipment, recentWorkouts };
 
@@ -186,6 +196,7 @@ export function CoachView({
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={cs.root}>
+      <Animated.View style={{ flex: 1, opacity }}>
       {/* Header */}
       <View style={cs.header}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -360,88 +371,99 @@ export function CoachView({
           </TouchableOpacity>
         </View>
       )}
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }
 
-/* ─── Local styles ─── */
-const cs = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border,
-  },
-  brand: { color: C.fire, fontSize: 18, fontWeight: "900", letterSpacing: 3 },
-  badge: {
-    backgroundColor: `${C.science}22`, borderWidth: 1, borderColor: C.science,
-    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4,
-  },
-  badgeText: { color: C.science, fontSize: 9, fontWeight: "900", letterSpacing: 2 },
-  limitBadge: {
-    borderWidth: 1, borderColor: C.border, borderRadius: 10,
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  limitText: { color: C.textDim, fontSize: 11, fontWeight: "900" },
-  scroll: { padding: 16, paddingBottom: 20 },
-  welcome: { alignItems: "center", paddingVertical: 40 },
-  welcomeTitle: { color: C.fire, fontSize: 32, fontWeight: "900", letterSpacing: 4 },
-  welcomeSub: { color: C.textDim, fontSize: 13, textAlign: "center", marginTop: 12, lineHeight: 20 },
-  limitHint: {
-    flexDirection: "row", alignItems: "center", gap: 6, marginTop: 16,
-    backgroundColor: `${C.gold}15`, borderWidth: 1, borderColor: `${C.gold}44`,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-  },
-  limitHintText: { color: C.gold, fontSize: 11, fontWeight: "700", flex: 1 },
-  userBubble: {
-    alignSelf: "flex-end", maxWidth: "80%", backgroundColor: C.science,
-    borderRadius: 16, borderBottomRightRadius: 4, padding: 12, marginBottom: 10,
-  },
-  userText: { color: "#fff", fontSize: 14, lineHeight: 20 },
-  modelBubble: {
-    alignSelf: "flex-start", maxWidth: "85%", backgroundColor: C.card,
-    borderRadius: 16, borderBottomLeftRadius: 4, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: C.border,
-  },
-  modelLabel: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  modelLabelText: { color: C.fire, fontSize: 10, fontWeight: "900", letterSpacing: 2 },
-  modelText: { color: C.text, fontSize: 14, lineHeight: 22 },
-  timestamp: { color: C.textMute, fontSize: 10 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, paddingBottom: 8 },
-  chip: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-  },
-  chipText: { color: C.text, fontSize: 12, fontWeight: "700" },
-  inputBar: {
-    flexDirection: "row", alignItems: "flex-end", gap: 8,
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg2,
-  },
-  input: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 10, color: C.text, fontSize: 14, maxHeight: 100,
-  },
-  sendBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: C.science,
-    justifyContent: "center", alignItems: "center",
-  },
-  overlayBar: {
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg2,
-  },
-  overlayLabel: {
-    color: C.fire, fontSize: 10, fontWeight: "900", letterSpacing: 2, marginBottom: 8,
-  },
-  optionChip: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
-  },
-  optionChipActive: { backgroundColor: C.text, borderColor: C.text },
-  optionText: { color: C.textDim, fontSize: 10, fontWeight: "900", letterSpacing: 1 },
-  limitBanner: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: `${C.gold}15`, borderTopWidth: 1, borderTopColor: `${C.gold}44`,
-  },
-  limitBannerText: { color: C.gold, fontSize: 12, fontWeight: "700", flex: 1 },
-});
+/* ─── Local styles (theme-aware) ─── */
+function makeCoachStyles(C: Palette, isDark: boolean) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.bg },
+    header: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      paddingHorizontal: 16, paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.borderHi,
+      backgroundColor: C.bg,
+      ...shadow(isDark, 1),
+    },
+    brand: { color: C.fire, fontSize: 18, fontWeight: "900", letterSpacing: 3 },
+    badge: {
+      backgroundColor: `${C.science}22`, borderWidth: 1, borderColor: C.science,
+      paddingHorizontal: 8, paddingVertical: 2, borderRadius: radii.xs,
+    },
+    badgeText: { color: C.science, fontSize: 9, fontWeight: "900", letterSpacing: 2 },
+    limitBadge: {
+      borderWidth: 1, borderColor: C.border, borderRadius: radii.md,
+      paddingHorizontal: 8, paddingVertical: 2,
+    },
+    limitText: { color: C.textDim, fontSize: 11, fontWeight: "900" },
+    scroll: { padding: 16, paddingBottom: 20 },
+    welcome: { alignItems: "center", paddingVertical: 40 },
+    welcomeTitle: { color: C.fire, fontSize: 32, fontWeight: "900", letterSpacing: 4 },
+    welcomeSub: { color: C.textDim, fontSize: 13, textAlign: "center", marginTop: 12, lineHeight: 20 },
+    limitHint: {
+      flexDirection: "row", alignItems: "center", gap: 6, marginTop: 16,
+      backgroundColor: `${C.gold}15`, borderWidth: 1, borderColor: `${C.gold}44`,
+      paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.md,
+    },
+    limitHintText: { color: C.gold, fontSize: 11, fontWeight: "700", flex: 1 },
+    userBubble: {
+      alignSelf: "flex-end", maxWidth: "80%", backgroundColor: C.science,
+      borderRadius: radii.lg, borderBottomRightRadius: 4, padding: 12, marginBottom: 10,
+      ...shadow(isDark, 1),
+    },
+    userText: { color: "#fff", fontSize: 14, lineHeight: 20 },
+    modelBubble: {
+      alignSelf: "flex-start", maxWidth: "85%", backgroundColor: C.card,
+      borderRadius: radii.lg, borderBottomLeftRadius: 4, padding: 14, marginBottom: 10,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
+      ...shadow(isDark, 1),
+    },
+    modelLabel: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+    modelLabelText: { color: C.fire, fontSize: 10, fontWeight: "900", letterSpacing: 2 },
+    modelText: { color: C.text, fontSize: 14, lineHeight: 22 },
+    timestamp: { color: C.textMute, fontSize: 10 },
+    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, paddingBottom: 8 },
+    chip: {
+      backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+      paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill,
+    },
+    chipText: { color: C.text, fontSize: 12, fontWeight: "700" },
+    inputBar: {
+      flexDirection: "row", alignItems: "flex-end", gap: 8,
+      paddingHorizontal: 16, paddingVertical: 10,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.borderHi,
+      backgroundColor: C.bg2,
+    },
+    input: {
+      backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: radii.pill,
+      paddingHorizontal: 16, paddingVertical: 10, color: C.text, fontSize: 14, maxHeight: 100,
+    },
+    sendBtn: {
+      width: 36, height: 36, borderRadius: 18, backgroundColor: C.science,
+      justifyContent: "center", alignItems: "center",
+      ...shadow(isDark, 1),
+    },
+    overlayBar: {
+      paddingHorizontal: 16, paddingVertical: 12,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.borderHi,
+      backgroundColor: C.bg2,
+    },
+    overlayLabel: {
+      color: C.fire, fontSize: 10, fontWeight: "900", letterSpacing: 2, marginBottom: 8,
+    },
+    optionChip: {
+      backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+      paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.lg,
+    },
+    optionChipActive: { backgroundColor: C.text, borderColor: C.text },
+    optionText: { color: C.textDim, fontSize: 10, fontWeight: "900", letterSpacing: 1 },
+    limitBanner: {
+      flexDirection: "row", alignItems: "center", gap: 8,
+      paddingHorizontal: 16, paddingVertical: 10,
+      backgroundColor: `${C.gold}15`, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${C.gold}44`,
+    },
+    limitBannerText: { color: C.gold, fontSize: 12, fontWeight: "700", flex: 1 },
+  });
+}

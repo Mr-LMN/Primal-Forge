@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Animated, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, TIPS, XP_RULES, CREDIT_PER_XP, PERKS, todayKey, formatDateDisplay, round } from "../data";
-import { styles } from "../styles";
+import { TIPS, XP_RULES, CREDIT_PER_XP, PERKS, todayKey, formatDateDisplay, round } from "../data";
+import { useStyles } from "../styles";
+import { useTheme } from "../theme";
 import { confirmAction } from "../utils";
 import type { Profile, XPState, BankHistoryEntry, WeightEntry, WorkoutLogged } from "../types";
 
@@ -31,11 +32,22 @@ export function VaultView({
   onResetBank: () => void;
   onSpendCredit: (cost: number) => void;
 }) {
+  const { C } = useTheme();
+  const styles = useStyles();
   const today = todayKey();
   const todayXP = xp.daily[today] || {};
   const todayDeficit = profile.carbs - consumedCarbs;
   const alreadyBanked = bankHistory.some((h) => h.date === today);
   const todayWorkouts = workoutsLogged.filter((w) => w.date === today);
+
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [opacity, translateY]);
 
   const earnList = [
     { label: "Daily Intel Read", got: !!todayXP.intelRead, xp: XP_RULES.intelRead },
@@ -56,6 +68,7 @@ export function VaultView({
   ];
 
   return (
+    <Animated.View style={{ flex: 1, opacity, transform: [{ translateY }] }}>
     <ScrollView contentContainerStyle={styles.scrollPad} testID="vault-view">
       <Text style={styles.sectionKicker}>VAULT · YOUR FORGE</Text>
 
@@ -194,5 +207,6 @@ export function VaultView({
         </View>
       ))}
     </ScrollView>
+    </Animated.View>
   );
 }

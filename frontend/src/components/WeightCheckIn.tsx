@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { C, XP_RULES, formatDateDisplay } from "../data";
-import { styles } from "../styles";
+import { XP_RULES, formatDateDisplay } from "../data";
+import { useStyles } from "../styles";
+import { useTheme } from "../theme";
 import type { WeightEntry } from "../types";
 
 export function WeightCheckIn({
@@ -24,6 +25,8 @@ export function WeightCheckIn({
   weights: WeightEntry[];
   onSave: (kg: number) => void;
 }) {
+  const { C } = useTheme();
+  const styles = useStyles();
   const [kg, setKg] = useState("");
   useEffect(() => {
     if (visible) setKg("");
