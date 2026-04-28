@@ -1,7 +1,98 @@
-import { StyleSheet, Platform } from "react-native";
-import { C } from "./data";
+/**
+ * PRIMALFORGE — GLOBAL STYLES
+ *
+ * Refactored Phase 2 (UI Polish):
+ *   • makeStyles(C, isDark)  → palette-aware StyleSheet factory
+ *   • useStyles()             → React hook (auto-binds to ThemeProvider)
+ *   • radii / shadow / frostedGlass  → utility helpers used across screens
+ *
+ * Existing screens that still import the static `styles` keep working
+ * (backed by the dark palette from `data.ts`). New / refreshed screens
+ * should call `useStyles()` for live light/dark switching.
+ */
+import { StyleSheet, Platform, ViewStyle } from "react-native";
+import { useMemo } from "react";
+import { C as STATIC_C } from "./data";
+import { useTheme, type Palette } from "./theme";
 
-export const styles = StyleSheet.create({
+/* ─── Utility tokens ──────────────────────────────────────────────────── */
+export const radii = {
+  xs: 4,
+  sm: 8,
+  md: 10,
+  lg: 14,        // standardised card radius (Phase 2)
+  xl: 16,
+  xxl: 22,
+  pill: 999,
+} as const;
+
+/** Premium iOS/Android shadow stack. `level` = 1 (subtle) … 4 (lifted FAB). */
+export function shadow(isDark: boolean, level: 1 | 2 | 3 | 4 = 2): ViewStyle {
+  const opacity = isDark ? 0.45 : 0.12;
+  switch (level) {
+    case 1:
+      return {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: opacity * 0.6,
+        shadowRadius: 3,
+        elevation: 2,
+      };
+    case 2:
+      return {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: opacity * 0.8,
+        shadowRadius: 8,
+        elevation: 4,
+      };
+    case 3:
+      return {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: opacity,
+        shadowRadius: 14,
+        elevation: 8,
+      };
+    case 4:
+      return {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: opacity * 1.1,
+        shadowRadius: 22,
+        elevation: 14,
+      };
+  }
+}
+
+/** Frosted-glass background (use BlurView on iOS, semi-transparent fill elsewhere). */
+export function frostedGlass(C: Palette, isDark: boolean, alpha = 0.55): ViewStyle {
+  // Hex helper: take card color and slap an alpha — works across platforms.
+  const hex = C.card.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return {
+    backgroundColor: `rgba(${r},${g},${b},${alpha})`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+    borderRadius: radii.lg,
+  };
+}
+
+/* ─── useStyles() hook ───────────────────────────────────────────────── */
+/**
+ * React hook returning a memoised StyleSheet bound to the active palette.
+ * Use inside any screen / component that should respect light/dark theme.
+ */
+export function useStyles() {
+  const { C, isDark } = useTheme();
+  return useMemo(() => makeStyles(C, isDark), [C, isDark]);
+}
+
+/* ─── Factory ─────────────────────────────────────────────────────────── */
+export function makeStyles(C: Palette, isDark: boolean) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   shell: {
     flex: 1, width: "100%",
@@ -1207,5 +1298,38 @@ export const styles = StyleSheet.create({
   },
   recipeFormMacroCol: { flex: 1 },
   mealPickRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+
+  /* ─── Phase 2 utility classes ─────────────────────────────── */
+  /** Standardised premium card. Use as a base then layer specifics. */
+  cardBase: {
+    backgroundColor: C.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    borderRadius: radii.lg,
+    padding: 16,
+    ...shadow(isDark, 1),
+  },
+  cardElevated: {
+    backgroundColor: C.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.borderHi,
+    borderRadius: radii.lg,
+    padding: 18,
+    ...shadow(isDark, 2),
+  },
+  /** Translucent overlay surface (drop a BlurView behind for true frosted). */
+  frosted: {
+    ...frostedGlass(C, isDark, 0.6),
+    padding: 16,
+  },
 });
+}
+
+/* ─── Static fallback (legacy import) ─────────────────────────────────── */
+/**
+ * Backwards-compatible static export. Bound to the original dark palette.
+ * Components that haven't been migrated to `useStyles()` continue to render
+ * unchanged. New work should prefer `useStyles()`.
+ */
+export const styles = makeStyles(STATIC_C as Palette, true);
 

@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   Share,
+  Animated,
+  Easing,
 } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
-import { C } from "../data";
+import { useTheme, type Palette } from "../theme";
+import { radii, shadow } from "../styles";
 import type { LogEntry, Profile } from "../types";
 
 type Period = "today" | "7d" | "30d";
@@ -55,6 +58,7 @@ function buildSummaries(log: LogEntry[], dateKeys: string[], period: "7d" | "30d
 // ─── DonutChart ───────────────────────────────────────────────────────────────
 
 function DonutChart({ p, f, c, kcal, target }: { p: number; f: number; c: number; kcal: number; target: number }) {
+  const { C } = useTheme();
   const SIZE = 190;
   const cx = SIZE / 2;
   const cy = SIZE / 2;
@@ -137,6 +141,7 @@ function DonutChart({ p, f, c, kcal, target }: { p: number; f: number; c: number
 // ─── MacroCards ───────────────────────────────────────────────────────────────
 
 function MacroCards({ p, f, c, profile }: { p: number; f: number; c: number; profile: Profile }) {
+  const { C, isDark } = useTheme();
   const items = [
     { label: "PROTEIN", val: p, target: profile.protein, color: C.science, unit: "g" },
     { label: "CARBS",   val: c, target: profile.carbs,   color: C.gold,    unit: "g" },
@@ -147,7 +152,7 @@ function MacroCards({ p, f, c, profile }: { p: number; f: number; c: number; pro
       {items.map((m) => {
         const pct = m.target > 0 ? Math.min(1, m.val / m.target) : 0;
         return (
-          <View key={m.label} style={{ flex: 1, backgroundColor: C.card, borderRadius: 8, padding: 10, borderWidth: 1, borderColor: C.border }}>
+          <View key={m.label} style={[{ flex: 1, backgroundColor: C.card, borderRadius: radii.md, padding: 10, borderWidth: 1, borderColor: C.border }, shadow(isDark, 1)]}>
             <Text style={{ color: m.color, fontSize: 9, fontWeight: "700", letterSpacing: 0.5, marginBottom: 4 }}>{m.label}</Text>
             <Text style={{ color: C.text, fontSize: 16, fontWeight: "700" }}>{Math.round(m.val)}{m.unit}</Text>
             <Text style={{ color: C.textMute, fontSize: 10 }}>/ {Math.round(m.target)}{m.unit}</Text>
@@ -164,6 +169,7 @@ function MacroCards({ p, f, c, profile }: { p: number; f: number; c: number; pro
 // ─── BarChart ─────────────────────────────────────────────────────────────────
 
 function BarChart({ summaries, target }: { summaries: DaySummary[]; target: number }) {
+  const { C } = useTheme();
   const BAR_H = 100;
   const maxKcal = Math.max(target * 1.2, ...summaries.map((d) => d.kcal), 100);
   const targetY = (target / maxKcal) * BAR_H;
@@ -204,6 +210,7 @@ function BarChart({ summaries, target }: { summaries: DaySummary[]; target: numb
 // ─── AveragesCard ─────────────────────────────────────────────────────────────
 
 function AveragesCard({ summaries, profile }: { summaries: DaySummary[]; profile: Profile }) {
+  const { C, isDark } = useTheme();
   const active = summaries.filter((d) => d.hasData);
   if (active.length === 0) return null;
 
@@ -232,7 +239,7 @@ function AveragesCard({ summaries, profile }: { summaries: DaySummary[]; profile
   };
 
   return (
-    <View style={{ backgroundColor: C.card, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: C.border, marginTop: 16 }}>
+    <View style={[{ backgroundColor: C.card, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: C.border, marginTop: 16 }, shadow(isDark, 1)]}>
       <Text style={{ color: C.textDim, fontSize: 10, fontWeight: "700", letterSpacing: 1, marginBottom: 12 }}>
         DAILY AVERAGE · {n} DAY{n !== 1 ? "S" : ""} LOGGED
       </Text>
@@ -247,6 +254,7 @@ function AveragesCard({ summaries, profile }: { summaries: DaySummary[]; profile
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
 function ChartLegend() {
+  const { C } = useTheme();
   return (
     <View style={{ flexDirection: "row", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
       {[
@@ -266,6 +274,7 @@ function ChartLegend() {
 // ─── SectionHeader ────────────────────────────────────────────────────────────
 
 function SectionHeader({ title }: { title: string }) {
+  const { C } = useTheme();
   return (
     <Text style={{ color: C.textDim, fontSize: 10, fontWeight: "700", letterSpacing: 1, marginBottom: 12 }}>
       {title}
@@ -276,7 +285,18 @@ function SectionHeader({ title }: { title: string }) {
 // ─── TrendsView ───────────────────────────────────────────────────────────────
 
 export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile }) {
+  const { C, isDark } = useTheme();
   const [period, setPeriod] = useState<Period>("today");
+
+  // Entry animation
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [opacity, translateY]);
 
   const todayDateKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -306,13 +326,14 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
   ];
 
   return (
+    <Animated.View style={{ flex: 1, opacity, transform: [{ translateY }] }}>
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
       showsVerticalScrollIndicator={false}
     >
       {/* Period toggle */}
-      <View style={{ flexDirection: "row", backgroundColor: C.card, borderRadius: 8, padding: 3, marginBottom: 20, borderWidth: 1, borderColor: C.border }}>
+      <View style={[{ flexDirection: "row", backgroundColor: C.card, borderRadius: radii.sm, padding: 3, marginBottom: 20, borderWidth: 1, borderColor: C.border }, shadow(isDark, 1)]}>
         {PERIODS.map((p) => (
           <TouchableOpacity
             key={p.id}
@@ -345,7 +366,7 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
       {period === "7d" && (
         <View>
           <SectionHeader title="CALORIES · LAST 7 DAYS" />
-          <View style={{ backgroundColor: C.card, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: C.border }}>
+          <View style={[{ backgroundColor: C.card, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: C.border }, shadow(isDark, 1)]}>
             <BarChart summaries={summaries7} target={profile.calories} />
             <ChartLegend />
           </View>
@@ -357,7 +378,7 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
       {period === "30d" && (
         <View>
           <SectionHeader title="CALORIES · LAST 30 DAYS" />
-          <View style={{ backgroundColor: C.card, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: C.border }}>
+          <View style={[{ backgroundColor: C.card, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: C.border }, shadow(isDark, 1)]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ width: 30 * 18 }}>
                 <BarChart summaries={summaries30} target={profile.calories} />
@@ -372,18 +393,22 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
       {/* Export */}
       <TouchableOpacity
         onPress={exportCSV}
-        style={{
-          marginTop: 24,
-          paddingVertical: 14,
-          backgroundColor: C.card,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: C.border,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-        }}
+        activeOpacity={0.85}
+        style={[
+          {
+            marginTop: 24,
+            paddingVertical: 14,
+            backgroundColor: C.card,
+            borderRadius: radii.sm,
+            borderWidth: 1,
+            borderColor: C.border,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          },
+          shadow(isDark, 1),
+        ]}
       >
         <Ionicons name="download-outline" size={16} color={C.textDim} />
         <Text style={{ color: C.textDim, fontSize: 12, fontWeight: "700", letterSpacing: 1 }}>
@@ -391,5 +416,6 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
         </Text>
       </TouchableOpacity>
     </ScrollView>
+    </Animated.View>
   );
 }
