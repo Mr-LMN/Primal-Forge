@@ -318,7 +318,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   statusDetail: { color: C.text, fontSize: 14, lineHeight: 20 },
 
   penaltyCard: {
-    backgroundColor: "#1a0808", borderWidth: 1.5, borderColor: C.penalty,
+    backgroundColor: isDark ? "#1a0808" : "rgba(220,38,38,0.06)", borderWidth: 1.5, borderColor: C.penalty,
     borderRadius: 12, padding: 18, marginBottom: 14,
   },
   penaltyTag: { color: C.penalty, fontSize: 11, letterSpacing: 3, fontWeight: "900", marginBottom: 8 },
@@ -574,7 +574,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* Ledger / carb bank (in VAULT) */
   bankCard: {
-    backgroundColor: "#06180c", borderWidth: 1.5, borderColor: C.optimal,
+    backgroundColor: isDark ? "#06180c" : "rgba(22,163,74,0.06)", borderWidth: 1.5, borderColor: C.optimal,
     borderRadius: 14, padding: 22, marginBottom: 16,
   },
   bankLabel: { color: C.optimal, letterSpacing: 4, fontSize: 11, fontWeight: "900", marginBottom: 8 },
@@ -875,7 +875,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   },
   recipeMacroChipKcal: {
     borderColor: C.text,
-    backgroundColor: "rgba(245,245,245,0.05)",
+    backgroundColor: isDark ? "rgba(245,245,245,0.05)" : "rgba(0,0,0,0.04)",
   },
   recipeMacroChipP: {
     borderColor: C.science,

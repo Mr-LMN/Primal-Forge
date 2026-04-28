@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  C,
   FOODS,
   RECIPES,
   XP_RULES,
@@ -27,7 +26,7 @@ import {
   type RecipeMeal,
   type RecipeIngredient,
 } from "../data";
-import { styles } from "../styles";
+import { useStyles } from "../styles";
 import {
   haptic,
   confirmAction,
@@ -105,7 +104,8 @@ export function FuelView({
   onSaveCustomRecipe: (r: Recipe) => void;
   onDeleteCustomRecipe: (id: string) => void;
 }) {
-  const { C: themeC } = useTheme();
+  const { C } = useTheme();
+  const styles = useStyles();
   const [mode, setMode] = useState<FuelMode>("foods");
   const [recipeSort, setRecipeSort] = useState<RecipeSort>("default");
   const [picker, setPicker] = useState(false);
@@ -667,7 +667,7 @@ export function FuelView({
               const isCustom = customIds.has(r.id);
               const score = recipeSort === "fit" ? fitScore(r, remaining) : null;
               return (
-              <View key={r.id} style={[styles.recipeCard, { backgroundColor: themeC.card, borderColor: themeC.border }]} testID={`recipe-${r.id}`}>
+              <View key={r.id} style={[styles.recipeCard, { backgroundColor: C.card, borderColor: C.border }]} testID={`recipe-${r.id}`}>
                 {/* Recipe hero image */}
                 <ImageCard
                   query={r.name}
