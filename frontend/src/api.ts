@@ -308,6 +308,7 @@ export type ExerciseDbEntry = {
   description: string;
   difficulty: "beginner" | "intermediate" | "advanced" | string;
   category: string;
+  gifUrl?: string;
 };
 
 export async function searchExerciseDb(name: string): Promise<ExerciseDbEntry[]> {

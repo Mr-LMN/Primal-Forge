@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -1018,6 +1018,17 @@ export function ForgeView({
                 <Text style={[styles.detailTitle, { marginTop: 4, marginBottom: 14 }]}>
                   {lookupDetail.name}
                 </Text>
+
+                {lookupDbEntry?.gifUrl ? (
+                  <View style={{ marginBottom: 16, borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: C.border }}>
+                    <Image
+                      source={{ uri: lookupDbEntry.gifUrl }}
+                      style={{ width: "100%", height: 240, backgroundColor: C.card }}
+                      resizeMode="contain"
+                      accessibilityLabel={`${lookupDetail.name} exercise demonstration`}
+                    />
+                  </View>
+                ) : null}
 
                 {lookupDetail.muscles.length > 0 && (
                   <View style={{ marginBottom: 14 }}>
