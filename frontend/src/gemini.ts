@@ -43,6 +43,7 @@ type GeminiRequest = {
     temperature?: number;
     maxOutputTokens?: number;
     responseMimeType?: string;
+    thinkingConfig?: { thinkingBudget: number };
   };
 };
 
@@ -143,7 +144,10 @@ export async function chatWithCoach(
     systemInstruction: { parts: [{ text: buildSystemPrompt(ctx) }] },
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 800,
+      maxOutputTokens: 1024,
+      // gemini-2.5-flash spends part of the output budget on hidden thinking
+      // tokens by default, which truncates visible replies to a single line.
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 }
@@ -182,6 +186,7 @@ Respond in this EXACT JSON format (no markdown, no backticks, just raw JSON):
       temperature: 0.8,
       maxOutputTokens: 1200,
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -228,6 +233,7 @@ Respond in this EXACT JSON format (no markdown, no backticks, just raw JSON):
       temperature: 0.8,
       maxOutputTokens: 1200,
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -276,6 +282,7 @@ Be honest. If it's snake oil, say so. If it works, cite the evidence.`;
       temperature: 0.4, // lower temp for more factual responses
       maxOutputTokens: 1500,
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
