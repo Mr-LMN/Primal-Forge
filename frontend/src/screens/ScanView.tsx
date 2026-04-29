@@ -28,6 +28,7 @@ import { useStyles, radii, shadow } from "../styles";
 import { useTheme, type Palette } from "../theme";
 import { haptic, confirmAction } from "../utils";
 import type { ScanHistEntry } from "../types";
+import { fetchOpenBeautyFactsBarcode } from "../api";
 
 /* ── types ───────────────────────────────────────────────── */
 type OcrState =
@@ -136,20 +137,14 @@ export function ScanView({
     setBarcode({ kind: "fetching", barcode: data });
 
     try {
-      const resp = await fetch(
-        `https://world.openbeautyfacts.org/api/v0/product/${data}.json`
-      );
-      const json = await resp.json();
+      const product = await fetchOpenBeautyFactsBarcode(data);
 
-      if (json.status === 0 || !json.product) {
+      if (!product) {
         setBarcode({ kind: "notfound", barcode: data });
         return;
       }
 
-      const p = json.product;
-      const name: string = p.product_name || p.brands || "Unknown product";
-      const ings: string = p.ingredients_text || "";
-
+      const { name, ingredients: ings } = product;
       setBarcode({ kind: "found", barcode: data, name });
 
       if (ings.trim().length > 5) {
@@ -157,7 +152,6 @@ export function ScanView({
         setProductLabel(name);
         setResult(null);
         setShowSavePrompt(false);
-        // auto-run scan
         const r = scanLabel(ings);
         setResult(r);
       } else {
@@ -466,12 +460,27 @@ export function ScanView({
         {/* ── 4. Results ────────────────────────────────────────── */}
         {result && (
           <View testID="scan-result" style={{ marginTop: 20 }}>
-            {/* Score circle */}
-            <View style={[styles.scanCircle, { borderColor: verdictColor(C, result.verdict) }]} testID="scan-score-circle">
-              <Text style={[styles.scanCircleScore, { color: verdictColor(C, result.verdict) }]}>{result.score}</Text>
-              <Text style={[styles.scanCircleSub, { color: verdictColor(C, result.verdict) }]}>
-                {result.verdict === "green" ? "CLEAN" : result.verdict === "amber" ? "CAUTION" : "AVOID"}
+            {/* Primal Score circle */}
+            <View style={{ alignItems: "center", marginBottom: 20 }}>
+              <Text style={{ color: C.textDim, fontSize: 9, fontWeight: "900", letterSpacing: 3, marginBottom: 8 }}>
+                PRIMAL SCORE
               </Text>
+              <View style={[styles.scanCircle, { borderColor: verdictColor(C, result.verdict) }]} testID="scan-score-circle">
+                <Text style={[styles.scanCircleScore, { color: verdictColor(C, result.verdict) }]}>{result.score}</Text>
+                <Text style={[styles.scanCircleSub, { color: verdictColor(C, result.verdict) }]}>
+                  {result.verdict === "green" ? "CLEAN" : result.verdict === "amber" ? "CAUTION" : "AVOID"}
+                </Text>
+              </View>
+              <View style={{
+                marginTop: 10, height: 8, width: 200, borderRadius: 4,
+                backgroundColor: C.border, overflow: "hidden",
+              }}>
+                <View style={{
+                  height: 8, borderRadius: 4,
+                  width: `${result.score}%`,
+                  backgroundColor: verdictColor(C, result.verdict),
+                }} />
+              </View>
             </View>
 
             {/* Tally row */}

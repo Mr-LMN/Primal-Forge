@@ -1505,7 +1505,7 @@ export const scanLabel = (input: string): ScanResult => {
   const reds = matches.filter((m) => m.level === "red").length;
   const ambers = matches.filter((m) => m.level === "amber").length;
   const greens = matches.filter((m) => m.level === "green").length;
-  const score = Math.max(0, Math.min(100, 100 - reds * 18 - ambers * 6));
+  const score = Math.max(0, Math.min(100, 100 - reds * 20 - ambers * 5));
   const verdict: RiskLevel = score >= 70 ? "green" : score >= 40 ? "amber" : "red";
 
   return { matches, unknown, reds, ambers, greens, score, verdict };
