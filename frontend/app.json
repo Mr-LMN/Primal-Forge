@@ -17,7 +17,8 @@
         "foregroundImage": "./assets/images/react-logo.png",
         "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "minSdkVersion": 26
     },
     "androidStatusBar": {
       "backgroundColor": "#000000",
