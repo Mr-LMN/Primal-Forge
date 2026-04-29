@@ -1,3 +1,5 @@
+import type { Food } from "./data";
+
 // ─── Shared fetch helpers ────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -320,4 +322,57 @@ export async function searchExerciseDb(name: string): Promise<ExerciseDbEntry[]>
       "x-rapidapi-key": _EXERCISEDB_KEY,
     },
   });
+}
+
+// ─── Open Food Facts ─────────────────────────────────────────────────────────
+// Free, no API key required. https://world.openfoodfacts.org/api/v2/product/[barcode]
+
+const OPEN_FACTS_UA = "PrimalForge - React Native - Version 1.0";
+
+export async function fetchOpenFoodFactsBarcode(barcode: string): Promise<Food | null> {
+  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}`;
+  try {
+    const json = await fetchJson<any>("openfoodfacts", url, {
+      headers: { "User-Agent": OPEN_FACTS_UA },
+    });
+    if (json.status !== 1 || !json.product) return null;
+    const p = json.product;
+    const n = p.nutriments ?? {};
+    const kcalPer100 =
+      n["energy-kcal_100g"] ??
+      (n["energy_100g"] != null ? Math.round(n["energy_100g"] / 4.184) : 0);
+    return {
+      id: `barcode-${barcode}`,
+      name: p.product_name_en || p.product_name || "Scanned Product",
+      cat: "Scanned",
+      kcal: Math.round(kcalPer100),
+      p: Math.round((n.proteins_100g ?? 0) * 10) / 10,
+      f: Math.round((n.fat_100g ?? 0) * 10) / 10,
+      c: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Open Beauty Facts ────────────────────────────────────────────────────────
+// Free, no API key required. https://world.openbeautyfacts.org/api/v2/product/[barcode]
+
+export async function fetchOpenBeautyFactsBarcode(
+  barcode: string,
+): Promise<{ name: string; ingredients: string } | null> {
+  const url = `https://world.openbeautyfacts.org/api/v2/product/${encodeURIComponent(barcode)}`;
+  try {
+    const json = await fetchJson<any>("openbeautyfacts", url, {
+      headers: { "User-Agent": OPEN_FACTS_UA },
+    });
+    if (json.status !== 1 || !json.product) return null;
+    const p = json.product;
+    return {
+      name: p.product_name || p.brands || "Unknown product",
+      ingredients: p.ingredients_text ?? "",
+    };
+  } catch {
+    return null;
+  }
 }

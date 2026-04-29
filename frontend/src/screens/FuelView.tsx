@@ -37,7 +37,7 @@ import {
   type PlannedMeal,
 } from "../utils";
 import type { LogEntry, FoodMeal } from "../types";
-import { searchUsdaFoods, USDA_AVAILABLE } from "../api";
+import { searchUsdaFoods, USDA_AVAILABLE, fetchOpenFoodFactsBarcode } from "../api";
 import { useTheme } from "../theme";
 import { ImageCard } from "../components/ImageCard";
 
@@ -409,25 +409,10 @@ export function FuelView({
     setBarcodeStatus("loading");
     haptic("medium");
     try {
-      const res = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(data)}.json`
-      );
-      const json = await res.json();
-      if (json.status !== 1) throw new Error("not_found");
-      const prod = json.product;
-      const n = prod.nutriments ?? {};
-      const kcalPer100 =
-        n["energy-kcal_100g"] ??
-        (n["energy_100g"] != null ? Math.round(n["energy_100g"] / 4.184) : 0);
-      const food: Food = {
-        id: `barcode-${data}`,
-        name: prod.product_name_en || prod.product_name || "Scanned Product",
-        cat: "Scanned",
-        kcal: Math.round(kcalPer100),
-        p: Math.round((n.proteins_100g ?? 0) * 10) / 10,
-        f: Math.round((n.fat_100g ?? 0) * 10) / 10,
-        c: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
-      };
+      // Open Food Facts v2 (no key required); falls back to manual entry if not found.
+      // USDA FoodData Central does not support barcode lookup — use text search above.
+      const food = await fetchOpenFoodFactsBarcode(data);
+      if (!food) throw new Error("not_found");
       setSelected(food);
       setUnit({ id: "g", label: "g", g: 1 });
       setBarcodeVisible(false);
@@ -435,7 +420,7 @@ export function FuelView({
     } catch (err: any) {
       setBarcodeMsg(
         err?.message === "not_found"
-          ? "Product not found in database. Try a different barcode or enter manually."
+          ? "Product not found in database. Try a different barcode or search manually above."
           : "Couldn't reach food database. Check your connection."
       );
       setBarcodeStatus("error");
