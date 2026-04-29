@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme, type Palette } from "../theme";
 import { radii, shadow } from "../styles";
 import type { LogEntry, Profile } from "../types";
+import { HealthData } from "../healthKit";
 
 type Period = "today" | "7d" | "30d";
 
@@ -284,7 +285,7 @@ function SectionHeader({ title }: { title: string }) {
 
 // ─── TrendsView ───────────────────────────────────────────────────────────────
 
-export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile }) {
+export function TrendsView({ log, profile, healthData }: { log: LogEntry[]; profile: Profile; healthData?: HealthData | null; }) {
   const { C, isDark } = useTheme();
   const [period, setPeriod] = useState<Period>("today");
 
@@ -358,6 +359,29 @@ export function TrendsView({ log, profile }: { log: LogEntry[]; profile: Profile
             kcal={todayTotals.kcal}
             target={profile.calories}
           />
+
+          {/* Active Calories Deficit View */}
+          {healthData && healthData.activeCalories > 0 && (
+            <View style={[{ width: '100%', backgroundColor: C.card, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: C.border, marginBottom: 16 }, shadow(isDark, 1)]}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+                 <Text style={{ color: C.textDim, fontSize: 10, fontWeight: "700", letterSpacing: 1 }}>CALORIES IN</Text>
+                 <Text style={{ color: C.textDim, fontSize: 10, fontWeight: "700", letterSpacing: 1 }}>CALORIES OUT</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                 <Text style={{ color: C.text, fontSize: 16, fontWeight: "900" }}>{Math.round(todayTotals.kcal)} kcal</Text>
+                 <View style={{ alignItems: "center" }}>
+                    <Ionicons name="flame" size={20} color={C.fire} />
+                    <Text style={{ color: C.fire, fontSize: 10, fontWeight: "800", marginTop: 2 }}>{Math.round(healthData.activeCalories)} ACTIVE</Text>
+                 </View>
+                 <Text style={{ color: C.optimal, fontSize: 16, fontWeight: "900" }}>{Math.round(profile.bmr + healthData.activeCalories)} kcal</Text>
+              </View>
+              <View style={{ height: 4, backgroundColor: C.border, borderRadius: 2, marginTop: 12, overflow: "hidden", flexDirection: "row" }}>
+                 <View style={{ flex: todayTotals.kcal, backgroundColor: C.penalty }} />
+                 <View style={{ flex: Math.max(0, (profile.bmr + healthData.activeCalories) - todayTotals.kcal), backgroundColor: C.optimal }} />
+              </View>
+            </View>
+          )}
+
           <MacroCards p={todayTotals.p} f={todayTotals.f} c={todayTotals.c} profile={profile} />
         </View>
       )}
