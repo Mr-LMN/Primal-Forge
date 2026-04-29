@@ -1,0 +1,39 @@
+--- frontend/src/healthKit.ts
++++ frontend/src/healthKit.ts
+@@ -112,8 +112,8 @@
+     try {
+       const rhr = await new Promise<HealthValue[]>((resolve, reject) => {
+-        AppleHealthKit.getRestingHeartRate(options, (err: object | string | null, results: HealthValue[]) => {
++        AppleHealthKit.getHeartRateSamples(options, (err: object | string | null, results: HealthValue[]) => {
+           if (err) reject(err);
+           else resolve(results);
+         });
+       });
+       if (rhr && rhr.length > 0) {
+@@ -144,7 +144,7 @@
+       if (sleep) {
+          let msSleep = 0;
+          sleep.forEach(s => {
+-            if (s.value === 'ASLEEP') {
++            if (String(s.value) === 'ASLEEP') {
+                const start = new Date(s.startDate).getTime();
+                const end = new Date(s.endDate).getTime();
+                msSleep += (end - start);
+@@ -169,7 +169,7 @@
+           });
+        });
+        if (weight && weight.length > 0 && weight[0]) {
+-          const weightKgOptions: HealthInputOptions = { ...weightOptions, unit: 'gram' };
++          const weightKgOptions: HealthInputOptions = { ...weightOptions, unit: 'kg' as any };
+           const weightKg = await new Promise<HealthValue>((resolve, reject) => {
+             AppleHealthKit.getLatestWeight(weightKgOptions, (err: object | string | null, results: HealthValue) => {
+                if (err) reject(err);
+@@ -188,7 +188,7 @@
+           AppleHealthKit.getSamples({
+              startDate: today.toISOString(),
+              endDate: tomorrow.toISOString(),
+-             type: 'Workout'
++             type: 'Workout' as any
+           }, (err: object | string | null, results: HealthValue[]) => {
+              if (err) reject(err);
+              else resolve(results);

@@ -45,7 +45,6 @@ import { ScanView } from "../src/screens/ScanView";
 import { VaultView } from "../src/screens/VaultView";
 import { TrendsView } from "../src/screens/TrendsView";
 import { CoachView } from "../src/screens/CoachView";
-import { initHealthKit, fetchHealthData, HealthData } from "../src/healthKit";
 
 // Inner component so it can use useTheme()
 function AppInner() {
@@ -73,8 +72,6 @@ function AppInner() {
   const [toast, setToast] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const [showHelpBubble, setShowHelpBubble] = useState(false);
-  const [healthData, setHealthData] = useState<HealthData | null>(null);
-  const [isSyncingHealth, setIsSyncingHealth] = useState(false);
 
   // Draggable FAB
   const fabAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -349,31 +346,6 @@ function AppInner() {
     await addXP(XP_RULES.weighIn, "WEIGH-IN", "weighIn");
   };
 
-  const handleHealthSync = async () => {
-    haptic("light");
-    setIsSyncingHealth(true);
-    try {
-      const hasPerms = await initHealthKit();
-      if (!hasPerms) {
-        Alert.alert("Permission Required", "Please grant health permissions to sync data.");
-        setIsSyncingHealth(false);
-        return;
-      }
-      const data = await fetchHealthData();
-      setHealthData(data);
-      if (data.weightKg) {
-        // Check if latest weight is different, save if so
-        const latestLogged = weights.length > 0 ? weights[0].weight : null;
-        if (latestLogged !== data.weightKg) {
-           await handleWeightSave(data.weightKg);
-        }
-      }
-    } catch (e) {
-      console.log("Sync error", e);
-    }
-    setIsSyncingHealth(false);
-  };
-
   const credits = Math.floor(xp.total / CREDIT_PER_XP) - xp.spent;
 
   return (
@@ -402,9 +374,6 @@ function AppInner() {
               waterTarget={waterTarget}
               tip={todayTip}
               intelReadToday={intelReadToday}
-              healthData={healthData}
-              onSyncHealth={handleHealthSync}
-              isSyncingHealth={isSyncingHealth}
               onIntelTap={() => {
                 haptic();
                 setIntelModal(true);
@@ -455,7 +424,7 @@ function AppInner() {
             />
           )}
           {tab === "trends" && (
-            <TrendsView log={log} profile={profile} healthData={healthData} />
+            <TrendsView log={log} profile={profile} />
           )}
           {tab === "vault" && (
             <VaultView

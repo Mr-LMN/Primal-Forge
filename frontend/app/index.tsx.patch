@@ -1,0 +1,53 @@
+--- frontend/app/index.tsx
++++ frontend/app/index.tsx
+@@ -70,6 +70,8 @@
+   const [toast, setToast] = useState<string | null>(null);
+   const toastOpacity = useRef(new Animated.Value(0)).current;
+   const [showHelpBubble, setShowHelpBubble] = useState(false);
++  const [healthData, setHealthData] = useState<HealthData | null>(null);
++  const [isSyncingHealth, setIsSyncingHealth] = useState(false);
+
+   // Draggable FAB
+   const fabAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+@@ -298,6 +300,31 @@
+     await addXP(XP_RULES.weighIn, "WEIGH-IN", "weighIn");
+   };
+
++  const handleHealthSync = async () => {
++    haptic("light");
++    setIsSyncingHealth(true);
++    try {
++      const hasPerms = await initHealthKit();
++      if (!hasPerms) {
++        Alert.alert("Permission Required", "Please grant health permissions to sync data.");
++        setIsSyncingHealth(false);
++        return;
++      }
++      const data = await fetchHealthData();
++      setHealthData(data);
++      if (data.weightKg) {
++        // Check if latest weight is different, save if so
++        const latestLogged = weights.length > 0 ? weights[0].weight : null;
++        if (latestLogged !== data.weightKg) {
++           await handleWeightSave(data.weightKg);
++        }
++      }
++    } catch (e) {
++      console.log("Sync error", e);
++    }
++    setIsSyncingHealth(false);
++  };
++
+   const credits = Math.floor(xp.total / CREDIT_PER_XP) - xp.spent;
+
+   return (
+@@ -328,6 +355,9 @@
+               waterTarget={waterTarget}
+               tip={todayTip}
+               intelReadToday={intelReadToday}
++              healthData={healthData}
++              onSyncHealth={handleHealthSync}
++              isSyncingHealth={isSyncingHealth}
+               onIntelTap={() => {
+                 haptic();
+                 setIntelModal(true);

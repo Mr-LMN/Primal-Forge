@@ -350,7 +350,8 @@ function StrengthSession({
 
   const addSet = (exIdx: number) => {
     setSets((prev) => {
-      const last = prev[exIdx].at(-1) ?? { weight: "", reps: "", done: false };
+      const exSets = prev[exIdx];
+      const last = exSets.length > 0 ? exSets[exSets.length - 1] : { weight: "", reps: "", done: false };
       return { ...prev, [exIdx]: [...prev[exIdx], { weight: last.weight, reps: "", done: false }] };
     });
   };

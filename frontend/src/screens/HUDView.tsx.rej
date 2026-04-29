@@ -1,0 +1,10 @@
+--- HUDView.tsx
++++ HUDView.tsx
+@@ -9,6 +9,7 @@
+ import { useTheme } from "../theme";
+ import { Ionicons } from "@expo/vector-icons";
+ import type { Profile, Totals, WeightEntry } from "../types";
+ import { TIPS, formatDateDisplay, round } from "../data";
++import { HealthData } from "../healthKit";
+
+ /* ─── Sub-components ────────────────────────────────────────────────── */

@@ -33,7 +33,6 @@ import { useTheme } from "../theme";
 import { haptic } from "../utils";
 import { MacroRing } from "../components/MacroRing";
 import type { Profile, Totals, WeightEntry } from "../types";
-import { HealthData } from "../healthKit";
 
 /* ─── Daily Intel card with gradient border ────────────────────────── */
 function DailyIntel({
@@ -356,9 +355,6 @@ export function HUDView({
   tip,
   intelReadToday,
   onIntelTap,
-  healthData,
-  onSyncHealth,
-  isSyncingHealth,
 }: {
   profile: Profile;
   totals: Totals;
@@ -369,9 +365,6 @@ export function HUDView({
   tip: typeof TIPS[0];
   intelReadToday: boolean;
   onIntelTap: () => void;
-  healthData?: HealthData | null;
-  onSyncHealth?: () => void;
-  isSyncingHealth?: boolean;
 }) {
   const { C, isDark } = useTheme();
   const styles = useStyles();
@@ -449,53 +442,6 @@ export function HUDView({
             target={profile.carbs}
             color={carbColor}
           />
-        </View>
-
-        {/* Health Data Sync */}
-        <View style={[{ backgroundColor: C.card, borderColor: C.border, borderRadius: radii.lg, padding: 16, marginBottom: 14, borderWidth: StyleSheet.hairlineWidth }, shadow(isDark, 1)]}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-               <Ionicons name="fitness" size={18} color={C.fire} />
-               <Text style={{ fontSize: 10, fontWeight: "900", letterSpacing: 2, color: C.textDim }}>DEVICE SYNC</Text>
-             </View>
-             <TouchableOpacity
-                onPress={onSyncHealth}
-                disabled={isSyncingHealth}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.bg2, borderRadius: radii.sm, borderWidth: 1, borderColor: C.border }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: "800", color: C.text }}>{isSyncingHealth ? "SYNCING..." : "SYNC NOW"}</Text>
-             </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            {/* Steps Visual */}
-            <View style={{ flex: 1, alignItems: "center", borderRightWidth: 1, borderColor: C.border }}>
-              <Ionicons name="walk" size={24} color={C.science} />
-              <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, marginTop: 4 }}>{healthData?.steps?.toLocaleString() || "0"}</Text>
-              <Text style={{ fontSize: 9, fontWeight: "700", color: C.textMute, letterSpacing: 1 }}>STEPS</Text>
-            </View>
-
-            {/* Active Calories */}
-            <View style={{ flex: 1, alignItems: "center", borderRightWidth: 1, borderColor: C.border }}>
-              <Ionicons name="flame" size={24} color={C.fire} />
-              <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, marginTop: 4 }}>{Math.round(healthData?.activeCalories || 0)}</Text>
-              <Text style={{ fontSize: 9, fontWeight: "700", color: C.textMute, letterSpacing: 1 }}>ACTIVE KCAL</Text>
-            </View>
-
-            {/* Sleep */}
-            <View style={{ flex: 1, alignItems: "center", borderRightWidth: 1, borderColor: C.border }}>
-              <Ionicons name="moon" size={24} color={C.optimal} />
-              <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, marginTop: 4 }}>{healthData?.sleepHours || "0"}h</Text>
-              <Text style={{ fontSize: 9, fontWeight: "700", color: C.textMute, letterSpacing: 1 }}>SLEEP</Text>
-            </View>
-
-            {/* RHR */}
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Ionicons name="heart" size={24} color={C.penalty} />
-              <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, marginTop: 4 }}>{healthData?.restingHeartRate || "--"}</Text>
-              <Text style={{ fontSize: 9, fontWeight: "700", color: C.textMute, letterSpacing: 1 }}>RHR</Text>
-            </View>
-          </View>
         </View>
 
         <CarbStatusCard
