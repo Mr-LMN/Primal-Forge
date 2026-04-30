@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.primalforge.app",
+      "minSdkVersion": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/react-logo.png",
         "backgroundColor": "#000000"
