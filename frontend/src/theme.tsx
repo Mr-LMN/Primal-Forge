@@ -32,22 +32,22 @@ export const DARK = {
 
 /* ─── Light palette ─── */
 export const LIGHT = {
-  bg:         "#f8f7f5",
-  bg2:        "#efefed",
+  bg:         "#ffffff",
+  bg2:        "#f4f5f7",
   card:       "#ffffff",
-  cardHi:     "#f0efed",
-  border:     "#e0dedd",
-  borderHi:   "#cccccc",
-  text:       "#1a1a1a",
-  textDim:    "#5a5a5a",
-  textMute:   "#aaaaaa",
-  optimal:    "#16a34a",
-  warning:    "#d97706",
-  penalty:    "#dc2626",
-  science:    "#0284c7",
-  gold:       "#d97706",
-  fire:       "#ea580c",
-  headerGrad: ["#ffffff", "#f5f5f3"] as [string, string],
+  cardHi:     "#f8f9fa",
+  border:     "#ebebf0",
+  borderHi:   "#dcdce0",
+  text:       "#1c1c1e",
+  textDim:    "#636366",
+  textMute:   "#aeaeb2",
+  optimal:    "#34c759", // vibrant green accent
+  warning:    "#ff9500", // vibrant orange accent
+  penalty:    "#ff3b30",
+  science:    "#007aff", // crisp blue accent
+  gold:       "#ffcc00",
+  fire:       "#ff3b30",
+  headerGrad: ["#ffffff", "#f8f9fa"] as [string, string],
   tabBg:      "#ffffff",
 };
 

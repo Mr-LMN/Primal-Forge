@@ -28,39 +28,39 @@ export const radii = {
 
 /** Premium iOS/Android shadow stack. `level` = 1 (subtle) … 4 (lifted FAB). */
 export function shadow(isDark: boolean, level: 1 | 2 | 3 | 4 = 2): ViewStyle {
-  const opacity = isDark ? 0.45 : 0.12;
+  const opacity = isDark ? 0.45 : 0.05; // softer light mode shadows for premium feel
   switch (level) {
     case 1:
       return {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: opacity * 0.6,
-        shadowRadius: 3,
-        elevation: 2,
+        shadowOpacity: opacity,
+        shadowRadius: 4,
+        elevation: 1,
       };
     case 2:
       return {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: opacity * 0.8,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: opacity * 1.2,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 3,
       };
     case 3:
       return {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: opacity,
-        shadowRadius: 14,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: opacity * 1.5,
+        shadowRadius: 12,
+        elevation: 6,
       };
     case 4:
       return {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: opacity * 1.1,
-        shadowRadius: 22,
-        elevation: 14,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: opacity * 2,
+        shadowRadius: 24,
+        elevation: 12,
       };
   }
 }
@@ -111,19 +111,19 @@ export function makeStyles(C: Palette, isDark: boolean) {
   brandSub: { color: C.textDim, fontSize: 11, letterSpacing: 2, marginTop: 2, fontWeight: "700" },
   iconBtn: {
     width: 40, height: 40, borderRadius: 8,
-    borderWidth: 1, borderColor: C.border,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     alignItems: "center", justifyContent: "center", backgroundColor: C.card,
   },
   streakChip: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     marginRight: 8,
   },
   streakChipText: { color: C.fire, fontSize: 12, fontWeight: "900" },
   xpChip: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(245,180,0,0.1)", borderWidth: 1, borderColor: C.gold,
+    backgroundColor: "rgba(245,180,0,0.1)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.gold,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     marginRight: 8,
   },
@@ -150,7 +150,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   goalCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     padding: 18, borderRadius: 12, marginBottom: 10,
   },
   goalCardActive: { borderColor: C.optimal, backgroundColor: C.cardHi },
@@ -166,7 +166,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   segRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
   segBtn: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingVertical: 14, borderRadius: 10, alignItems: "center",
   },
   segBtnActive: { backgroundColor: C.text, borderColor: C.text },
@@ -174,19 +174,19 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   modeRow: { flexDirection: "row", gap: 6, marginBottom: 16 },
   modeBtn: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingVertical: 12, borderRadius: 8, alignItems: "center",
   },
   modeBtnActive: { backgroundColor: C.text, borderColor: C.text },
   modeText: { color: C.textDim, letterSpacing: 1, fontWeight: "900", fontSize: 11 },
   warnBox: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(245,158,11,0.08)", borderColor: C.warning, borderWidth: 1,
+    backgroundColor: "rgba(245,158,11,0.08)", borderColor: C.warning, borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 8, padding: 12, marginBottom: 12,
   },
   warnText: { color: C.warning, fontSize: 12, fontWeight: "700" },
   computedBox: {
-    backgroundColor: "rgba(34,197,94,0.08)", borderWidth: 1, borderColor: C.optimal,
+    backgroundColor: "rgba(34,197,94,0.08)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.optimal,
     borderRadius: 10, padding: 14, marginTop: 4,
   },
   computedLabel: { color: C.optimal, letterSpacing: 3, fontSize: 10, fontWeight: "900" },
@@ -194,7 +194,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   visualCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     padding: 16, borderRadius: 10, marginBottom: 8,
   },
   visualCardActive: { borderColor: C.text, backgroundColor: C.cardHi },
@@ -205,14 +205,14 @@ export function makeStyles(C: Palette, isDark: boolean) {
   onboardField: { marginBottom: 18 },
   label: { color: C.textDim, letterSpacing: 3, fontSize: 10, fontWeight: "800", marginBottom: 8 },
   input: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     color: C.text, fontSize: 22, fontWeight: "700",
     paddingHorizontal: 16, paddingVertical: 16, borderRadius: 10,
   },
   hint: { color: C.textMute, fontSize: 11, marginTop: 6, letterSpacing: 1 },
   tierBtn: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     padding: 16, borderRadius: 10, marginBottom: 8,
   },
   tierBtnActive: { borderColor: C.text, backgroundColor: C.cardHi },
@@ -223,26 +223,26 @@ export function makeStyles(C: Palette, isDark: boolean) {
   tierMetaBot: { color: C.textDim, fontSize: 11, fontWeight: "700", marginTop: 2 },
 
   previewCard: {
-    backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi,
+    backgroundColor: C.cardHi, borderWidth: StyleSheet.hairlineWidth, borderColor: C.borderHi,
     borderRadius: 14, padding: 18, marginTop: 8,
   },
   previewKicker: { color: C.science, letterSpacing: 4, fontSize: 10, fontWeight: "900", marginBottom: 12 },
   previewRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
   previewStat: {
-    flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 8, padding: 10, alignItems: "center",
   },
   previewStatLabel: { color: C.textMute, fontSize: 9, letterSpacing: 2, fontWeight: "800" },
   previewStatValue: { color: C.text, fontSize: 14, fontWeight: "900", marginTop: 2 },
   previewBig: {
-    backgroundColor: C.bg, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 14, alignItems: "center",
   },
   previewBigLabel: { color: C.textDim, letterSpacing: 3, fontSize: 10, fontWeight: "900" },
   previewBigValue: { color: C.text, fontSize: 38, fontWeight: "900", marginTop: 4 },
   previewMacros: { flexDirection: "row", gap: 8, marginTop: 12 },
   previewMacro: {
-    flex: 1, borderWidth: 1.5, borderRadius: 8,
+    flex: 1, borderWidth: 1, borderRadius: 8,
     paddingVertical: 10, alignItems: "center",
   },
   previewMacroLabel: { fontSize: 10, fontWeight: "900", letterSpacing: 2 },
@@ -257,7 +257,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   primaryBtnText: { color: C.bg, fontWeight: "900", letterSpacing: 3, fontSize: 13 },
   secondaryBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingVertical: 18, paddingHorizontal: 18, borderRadius: 10,
   },
   secondaryBtnText: { color: C.text, fontWeight: "900", letterSpacing: 2, fontSize: 12 },
@@ -273,7 +273,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* Today's Intel card */
   intelCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.science,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.science,
     borderRadius: 14, padding: 18, marginBottom: 16,
     overflow: "hidden",
   },
@@ -302,7 +302,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   macroGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
   macroCard: {
     width: "48%", backgroundColor: C.card,
-    borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, borderRadius: 12, padding: 14,
   },
   macroLabel: { color: C.textDim, fontSize: 10, letterSpacing: 2, fontWeight: "800", marginBottom: 8 },
   macroValueRow: { flexDirection: "row", alignItems: "baseline" },
@@ -311,14 +311,14 @@ export function makeStyles(C: Palette, isDark: boolean) {
   barTrack: { height: 4, backgroundColor: C.border, borderRadius: 2, marginTop: 10, overflow: "hidden" },
   barFill: { height: 4, borderRadius: 2 },
 
-  statusCard: { borderWidth: 1.5, borderRadius: 12, padding: 16, backgroundColor: C.card, marginBottom: 14 },
+  statusCard: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 16, backgroundColor: C.card, marginBottom: 14 },
   statusHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   statusTag: { fontSize: 11, fontWeight: "900", letterSpacing: 3 },
   statusDetail: { color: C.text, fontSize: 14, lineHeight: 20 },
 
   penaltyCard: {
-    backgroundColor: isDark ? "#1a0808" : "rgba(220,38,38,0.06)", borderWidth: 1.5, borderColor: C.penalty,
+    backgroundColor: isDark ? "#1a0808" : "rgba(220,38,38,0.06)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.penalty,
     borderRadius: 12, padding: 18, marginBottom: 14,
   },
   penaltyTag: { color: C.penalty, fontSize: 11, letterSpacing: 3, fontWeight: "900", marginBottom: 8 },
@@ -332,11 +332,11 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", padding: 20 },
   modalCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.borderHi,
     borderRadius: 16, padding: 22,
   },
   modalScrollCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.borderHi,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.borderHi,
     borderRadius: 16, padding: 22, maxHeight: "85%",
   },
   modalTitle: { color: C.penalty, letterSpacing: 4, fontWeight: "900", fontSize: 14 },
@@ -344,7 +344,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   modalSub: { color: C.textDim, fontSize: 13, lineHeight: 19, marginTop: 8, marginBottom: 18 },
   block: {
     flexDirection: "row", alignItems: "center", backgroundColor: C.bg2,
-    borderWidth: 1, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, borderRadius: 8, padding: 12, marginBottom: 8,
   },
   blockIdx: { color: C.penalty, fontWeight: "900", fontSize: 18, width: 40 },
   blockTime: { color: C.textDim, fontSize: 10, letterSpacing: 2, fontWeight: "700" },
@@ -352,7 +352,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* Water */
   waterCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, marginBottom: 14,
   },
   waterHeader: { flexDirection: "row", alignItems: "center" },
@@ -362,7 +362,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   waterBtnRow: { flexDirection: "row", gap: 8, marginTop: 12 },
   waterBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4,
-    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.bg2, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingVertical: 12, borderRadius: 8,
   },
   waterBtnPrimary: { backgroundColor: C.science, borderColor: C.science },
@@ -370,14 +370,14 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   miniStats: { flexDirection: "row", gap: 10, marginTop: 4 },
   miniStatBox: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 12, alignItems: "center",
   },
   miniStatLabel: { color: C.textMute, fontSize: 10, letterSpacing: 2, fontWeight: "800" },
   miniStatValue: { color: C.text, fontSize: 16, fontWeight: "900", marginTop: 4 },
 
   weightTrendCard: {
-    flexDirection: "row", backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flexDirection: "row", backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, marginTop: 14, gap: 12,
   },
   weightTrendLabel: { color: C.textMute, fontSize: 10, letterSpacing: 2, fontWeight: "800" },
@@ -387,7 +387,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* Recents */
   recentChip: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999,
     maxWidth: 200,
   },
@@ -396,7 +396,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   /* Fuel */
   foodPickerBtn: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 16, marginBottom: 16,
   },
   foodPickerLabel: { color: C.textDim, fontSize: 10, letterSpacing: 3, fontWeight: "800" },
@@ -405,7 +405,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   unitRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   unitChip: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8,
   },
   unitChipActive: { backgroundColor: C.text, borderColor: C.text },
@@ -418,13 +418,13 @@ export function makeStyles(C: Palette, isDark: boolean) {
   },
   wipeText: { color: C.penalty, fontSize: 11, letterSpacing: 2, fontWeight: "900" },
   emptyBox: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderStyle: "dashed", borderRadius: 10, padding: 24, alignItems: "center",
   },
   emptyText: { color: C.textMute, fontSize: 13, textAlign: "center", lineHeight: 19 },
 
   logCard: {
-    flexDirection: "row", backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flexDirection: "row", backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 14, marginBottom: 8,
   },
   logName: { color: C.text, fontWeight: "700", fontSize: 14 },
@@ -440,13 +440,13 @@ export function makeStyles(C: Palette, isDark: boolean) {
   },
   searchWrap: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, paddingHorizontal: 14, marginHorizontal: 16, marginTop: 12, gap: 10,
   },
   searchInput: { flex: 1, color: C.text, fontSize: 15, paddingVertical: 14 },
   foodRow: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 14, marginBottom: 8,
   },
   foodRowName: { color: C.text, fontWeight: "700", fontSize: 14 },
@@ -458,14 +458,14 @@ export function makeStyles(C: Palette, isDark: boolean) {
   /* FORGE */
   forgeCount: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.borderHi,
+    backgroundColor: C.cardHi, borderWidth: StyleSheet.hairlineWidth, borderColor: C.borderHi,
     borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 14,
   },
   forgeCountText: { color: C.text, fontWeight: "900", fontSize: 12, letterSpacing: 1 },
   forgeCountSub: { color: C.textDim, fontSize: 11 },
   clearBtnText: { color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
   equipmentSection: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 14, marginBottom: 14,
   },
   equipmentHeader: {
@@ -475,7 +475,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   equipmentCount: { color: C.science, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
   equipmentChip: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.bg2, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999,
   },
   equipmentChipActive: { backgroundColor: C.science, borderColor: C.science },
@@ -488,7 +488,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   equipmentTagText: { color: C.textDim, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   workoutCardLocked: { opacity: 0.45 },
   altBox: {
-    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.bg2, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 8, padding: 10, marginTop: 8, marginLeft: 38,
   },
   altKicker: { color: C.optimal, fontSize: 9, fontWeight: "900", letterSpacing: 2, marginBottom: 6 },
@@ -509,13 +509,13 @@ export function makeStyles(C: Palette, isDark: boolean) {
   sourceBadgeText: { color: C.gold, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
   filterRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   filterChip: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
   },
   filterChipActive: { backgroundColor: C.text, borderColor: C.text },
   filterChipText: { color: C.textDim, fontWeight: "900", fontSize: 10, letterSpacing: 1.5 },
   workoutCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 14, padding: 18, marginBottom: 12,
   },
   workoutHeaderRow: { flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 },
@@ -543,7 +543,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   detailTitle: { color: C.text, fontSize: 26, fontWeight: "900", letterSpacing: 0.5, marginTop: 8 },
   detailDesc: { color: C.textDim, fontSize: 14, lineHeight: 21, marginTop: 10 },
   scienceBox: {
-    backgroundColor: "rgba(14,165,233,0.06)", borderWidth: 1, borderColor: C.science,
+    backgroundColor: "rgba(14,165,233,0.06)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.science,
     borderRadius: 12, padding: 16, marginVertical: 16,
   },
   scienceKicker: { color: C.science, letterSpacing: 3, fontSize: 10, fontWeight: "900", marginBottom: 8 },
@@ -551,7 +551,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scienceCitation: { color: C.science, fontSize: 11, fontWeight: "700", marginTop: 10 },
 
   exerciseCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 14, marginBottom: 8,
   },
   exerciseHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -561,7 +561,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   exerciseCue: { color: C.textDim, fontSize: 12, lineHeight: 18, marginTop: 6, marginLeft: 38, fontStyle: "italic" },
   videoBtn: {
     flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, marginLeft: 38,
-    backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.bg2, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, alignSelf: "flex-start",
   },
   videoBtnText: { color: C.text, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
@@ -574,7 +574,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* Ledger / carb bank (in VAULT) */
   bankCard: {
-    backgroundColor: isDark ? "#06180c" : "rgba(22,163,74,0.06)", borderWidth: 1.5, borderColor: C.optimal,
+    backgroundColor: isDark ? "#06180c" : "rgba(22,163,74,0.06)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.optimal,
     borderRadius: 14, padding: 22, marginBottom: 16,
   },
   bankLabel: { color: C.optimal, letterSpacing: 4, fontSize: 11, fontWeight: "900", marginBottom: 8 },
@@ -582,7 +582,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   bankSub: { color: C.textDim, fontSize: 12, marginTop: 8, lineHeight: 18 },
   todayDeficitCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, gap: 14,
   },
   deficitValue: { fontSize: 28, fontWeight: "900", marginTop: 4 },
@@ -594,7 +594,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   bankBtnText: { color: C.bg, fontWeight: "900", letterSpacing: 2, fontSize: 12 },
   historyRow: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 14, marginBottom: 6,
   },
   historyDate: { color: C.textDim, fontSize: 13, fontWeight: "700" },
@@ -602,7 +602,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* VAULT */
   vaultHero: {
-    backgroundColor: "rgba(245,180,0,0.06)", borderWidth: 1.5, borderColor: C.gold,
+    backgroundColor: "rgba(245,180,0,0.06)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.gold,
     borderRadius: 16, padding: 22, marginBottom: 16, alignItems: "center",
   },
   vaultLabel: { color: C.gold, letterSpacing: 4, fontSize: 10, fontWeight: "900" },
@@ -610,13 +610,13 @@ export function makeStyles(C: Palette, isDark: boolean) {
   vaultXpSub: { color: C.textDim, fontSize: 12, marginTop: 4 },
   vaultSplit: { flexDirection: "row", gap: 10, marginBottom: 16 },
   vaultStat: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, alignItems: "center",
   },
   vaultStatLabel: { color: C.textDim, fontSize: 10, letterSpacing: 2, fontWeight: "900" },
   vaultStatValue: { color: C.text, fontSize: 24, fontWeight: "900", marginTop: 6 },
   todayEarn: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, marginBottom: 16,
   },
   earnRow: {
@@ -628,7 +628,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   earnXpDim: { color: C.textMute, fontWeight: "900", fontSize: 13 },
 
   perkCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, marginBottom: 10,
   },
   perkCardLocked: { opacity: 0.55 },
@@ -651,7 +651,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   perkRedeemTextDisabled: { color: C.textMute, fontSize: 11, fontWeight: "900", letterSpacing: 2 },
 
   archiveCard: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 12, padding: 16, marginBottom: 10,
   },
   archiveHead: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
@@ -667,13 +667,13 @@ export function makeStyles(C: Palette, isDark: boolean) {
 
   /* SCAN — Phase C */
   scanInputBox: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     color: C.text, fontSize: 13, lineHeight: 19,
     padding: 14, borderRadius: 10, minHeight: 120, textAlignVertical: "top",
   },
   scanActionRow: { flexDirection: "row", gap: 8, marginTop: 10 },
   scanSampleBtn: {
-    flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flex: 1, backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 8, paddingVertical: 10, alignItems: "center",
   },
   scanSampleText: { color: C.textDim, fontSize: 11, fontWeight: "900", letterSpacing: 1 },
@@ -685,7 +685,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scanCircleSub: { fontSize: 10, fontWeight: "900", letterSpacing: 3, marginTop: 2 },
   scanTallyRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
   scanTallyBox: {
-    flex: 1, borderWidth: 1, borderRadius: 8, padding: 10, alignItems: "center",
+    flex: 1, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, padding: 10, alignItems: "center",
   },
   scanTallyN: { fontSize: 22, fontWeight: "900" },
   scanTallyLabel: { fontSize: 9, fontWeight: "900", letterSpacing: 2, marginTop: 2 },
@@ -704,12 +704,12 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scanSwapsLabel: { color: C.optimal, fontSize: 9, fontWeight: "900", letterSpacing: 2, marginTop: 8 },
   scanSwapsRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 },
   scanSwapChip: {
-    backgroundColor: "rgba(34,197,94,0.08)", borderWidth: 1, borderColor: C.optimal,
+    backgroundColor: "rgba(34,197,94,0.08)", borderWidth: StyleSheet.hairlineWidth, borderColor: C.optimal,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
   },
   scanSwapText: { color: C.optimal, fontSize: 10, fontWeight: "700" },
   scanUnknownBox: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 8, padding: 10, marginTop: 8,
   },
   scanUnknownText: { color: C.textMute, fontSize: 11, lineHeight: 16 },
@@ -720,7 +720,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scanSaveText: { color: C.bg, fontWeight: "900", letterSpacing: 2, fontSize: 12 },
   scanHistoryCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 10, padding: 12, marginBottom: 8, gap: 12,
   },
   scanHistDot: {
@@ -732,7 +732,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scanHistDate: { color: C.textMute, fontSize: 10, marginTop: 2 },
   /* SCAN placeholder */
   scanHero: {
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    backgroundColor: C.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
     borderRadius: 16, padding: 28, alignItems: "center", marginTop: 20,
   },
   scanIcon: {
@@ -768,7 +768,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     flexDirection: "row",
     backgroundColor: C.card,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     padding: 4,
     marginBottom: 16,
@@ -802,7 +802,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   },
   recipeCard: {
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 12,
     padding: 14,
@@ -820,7 +820,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     paddingVertical: 3,
     borderRadius: 4,
     backgroundColor: "rgba(245,180,0,0.12)",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.gold,
   },
   recipeMealBadgeText: {
@@ -836,7 +836,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
   },
   recipeTimeBadgeText: {
@@ -871,7 +871,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   recipeMacroChipKcal: {
     borderColor: C.text,
@@ -926,7 +926,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     gap: 6,
     paddingVertical: 10,
     borderRadius: 7,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
   },
   recipeOpenText: {
@@ -975,7 +975,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   recipeDetailMacroBlock: {
     flexDirection: "row",
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 10,
     marginHorizontal: 20,
@@ -1042,7 +1042,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     marginHorizontal: 20,
     marginTop: 12,
     backgroundColor: "rgba(14,165,233,0.08)",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.science,
     borderRadius: 10,
     padding: 14,
@@ -1083,7 +1083,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     gap: 6,
     paddingVertical: 9,
     borderRadius: 7,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     backgroundColor: C.card,
   },
@@ -1109,7 +1109,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   fitBadgeText: {
     fontSize: 9,
@@ -1118,7 +1118,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   },
   fitHeaderBox: {
     backgroundColor: "rgba(14,165,233,0.06)",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.science,
     borderRadius: 10,
     padding: 12,
@@ -1151,7 +1151,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   ocrPanel: {
     marginTop: 10,
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 10,
     padding: 10,
@@ -1192,7 +1192,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     justifyContent: "center",
     gap: 6,
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 8,
     paddingVertical: 12,
@@ -1200,7 +1200,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   planBtnText: { color: C.text, fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   planSummary: {
     backgroundColor: "rgba(34,197,94,0.06)",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.optimal,
     borderRadius: 10,
     padding: 12,
@@ -1217,7 +1217,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   planSummaryMacro: { fontSize: 12, fontWeight: "900", letterSpacing: 1 },
   planMealCard: {
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 8,
     padding: 10,
@@ -1253,7 +1253,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
   scaleChip: {
     flex: 1,
     backgroundColor: C.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: 6,
     paddingVertical: 8,
@@ -1269,7 +1269,7 @@ export function makeStyles(C: Palette, isDark: boolean) {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.gold,
     backgroundColor: "rgba(245,180,0,0.08)",
   },
